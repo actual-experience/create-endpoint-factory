@@ -41,13 +41,13 @@ const hasSymbol =
  *
  * If undefined is returned (or there are no return statements), the status will be set to 204 and .end() will be called.
  */
-// shamelessly stolen from immer
+// inspired by Immer https://github.com/immerjs/immer/
 export const nothing: Nothing = hasSymbol
   ? Symbol.for('create-endpoint-factory-nothing')
   : ({ ['create-endpoint-factory-nothing']: true } as any);
 
 /** Use a class type for `nothing` so its type is unique */
-export class Nothing {
+class Nothing {
   // This lets us do `Exclude<T, Nothing>`
   // @ts-expect-error yes this is gross
   private _!: unique symbol;

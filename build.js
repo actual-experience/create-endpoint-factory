@@ -8,13 +8,13 @@ const sharedConfig = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   minify: true,
+  target: 'node12',
   external: Object.keys(dependencies ?? {}).concat(
     Object.keys(peerDependencies ?? {})
   ),
 };
 
 new Generator({
-  entry: 'src/index.ts',
   output: 'dist/index.d.ts',
 })
   .generate()
