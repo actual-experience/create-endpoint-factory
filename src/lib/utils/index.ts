@@ -1,6 +1,3 @@
-/**
- * @public
- */
 export interface SerializedError {
   name?: string;
   message?: string;
@@ -19,7 +16,6 @@ const commonProperties: Array<keyof SerializedError> = [
  * Serializes an error into a plain object.
  * Taken from https://github.com/reduxjs/redux-toolkit/, which is reworked from https://github.com/sindresorhus/serialize-error
  *
- * @public
  */
 export const miniSerializeError = (value: unknown): SerializedError => {
   if (typeof value === 'object' && value !== null) {
@@ -55,3 +51,18 @@ export const alwaysMatch =
   <T>() =>
   (val: any): val is T =>
     true;
+
+export type WrappedConstructor<
+  Constructor extends new (...args: any[]) => any
+> = (...args: ConstructorParameters<Constructor>) => InstanceType<Constructor>;
+
+/**
+ * Make a wrapper function that can create an instance without needing to use `new`
+ */
+export const wrapConstructor =
+  <Constructor extends new (...args: any[]) => any>(
+    constructor: Constructor
+  ): WrappedConstructor<Constructor> =>
+  (...args) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    new constructor(...args);

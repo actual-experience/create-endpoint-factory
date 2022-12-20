@@ -1,6 +1,11 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
-import type { HttpMethod, NothingToAny, ResError, ResSuccess } from './constants';
-import type { SerializedError } from './utils';
+import type {
+  HttpMethod,
+  NothingToAny,
+  ResError,
+  ResSuccess,
+} from './constants';
+import type { SerializedError, WrappedConstructor } from './utils';
 import type {
   ConditionalBool,
   Id,
@@ -55,9 +60,7 @@ export interface MethodHandlerApi<
    * );
    * ```
    */
-  succeedWithCode: (
-    ...args: ConstructorParameters<typeof ResSuccess<ReturnType>>
-  ) => ResSuccess<ReturnType>;
+  succeedWithCode: WrappedConstructor<typeof ResSuccess<ReturnType>>;
   /**
    * Throw an error with a specified HTTP code.
    * ```js
@@ -68,7 +71,7 @@ export interface MethodHandlerApi<
    * );
    * ```
    */
-  failWithCode: (...args: ConstructorParameters<typeof ResError>) => ResError;
+  failWithCode: WrappedConstructor<typeof ResError>;
   /**
    * Returned value from authentication function.
    * Undefined if authentication is disabled.

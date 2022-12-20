@@ -1,3 +1,5 @@
+import { wrapConstructor } from './utils';
+
 // Do we have non-polyfilled symbols?
 const hasSymbol =
   typeof Symbol !== 'undefined' && typeof Symbol('x') === 'symbol';
@@ -80,6 +82,8 @@ export class ResError extends Error {
   }
 }
 
+export const failWithCode = wrapConstructor(ResError);
+
 /**
  * Used to return a success response with a given code.
  *
@@ -88,3 +92,5 @@ export class ResError extends Error {
 export class ResSuccess<ReturnType = any> {
   constructor(public statusCode: number, public response: ReturnType) {}
 }
+
+export const succeedWithCode = wrapConstructor(ResSuccess);

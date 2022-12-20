@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { nothing, ResError, ResSuccess } from './constants';
+import {
+  failWithCode,
+  succeedWithCode,
+  nothing,
+  ResError,
+  ResSuccess,
+} from './constants';
 import type {
   CreateExtraApi,
   EndpointFactoryConfig,
@@ -7,11 +13,8 @@ import type {
   MethodHandlerApi,
 } from './types';
 import type { SerializedError } from './utils';
-import { miniSerializeError } from './utils';
+import { wrapConstructor, miniSerializeError } from './utils';
 import type { ConditionalBool, Validator } from './utils/types';
-
-const failWithCode: MethodHandlerApi['failWithCode'] = (...args) =>
-  new ResError(...args);
 
 const validate = <T, Input = any>(
   validator:
@@ -37,7 +40,7 @@ const authenticate = <Authentication = undefined>(
       throw err;
     }
     console.log(err);
-    throw new ResError(
+    throw failWithCode(
       401,
       err instanceof Error ? err.message : 'Authentication failed'
     );
@@ -81,7 +84,7 @@ export const executeDefinition = async <
       ReturnType,
       ConditionalBool<DisableAuthentication, undefined, Authentication>
     > = {
-      succeedWithCode: (...args) => new ResSuccess(...args),
+      succeedWithCode,
       failWithCode,
       authentication: authentication as ConditionalBool<
         DisableAuthentication,

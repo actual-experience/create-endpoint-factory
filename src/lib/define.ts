@@ -242,7 +242,7 @@ export const createEndpointFactory = <
         const definition =
           methodDefinitions[method.toLowerCase() as Lowercase<HttpMethod>];
         if (definition) {
-          return await executeDefinition(
+          return executeDefinition(
             config,
             definition,
             disableAuthentication,
@@ -250,7 +250,7 @@ export const createEndpointFactory = <
             res
           );
         } else if (defaultDefinition) {
-          return await executeDefinition(
+          return executeDefinition(
             config,
             defaultDefinition,
             disableAuthentication,
