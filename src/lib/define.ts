@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// this code should only ever be executed in node, so this **should** be fine to use
+import assert from 'assert/strict';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { HttpMethod } from './constants';
 import { executeDefinition } from './execute';
@@ -92,19 +93,35 @@ import type { ConditionalBool } from './utils/types';
  * }).handler;
  * ```
  */
-export const createEndpointFactory =
-  <
-    SerializedErrorType = SerializedError,
-    Authentication = undefined,
-    ExtraApi extends CreateExtraApi = CreateExtraApi<void, undefined>
-  >(
-    config: EndpointFactoryConfig<
-      SerializedErrorType,
-      Authentication,
-      ExtraApi
-    > = {}
-  ) =>
-  <
+export const createEndpointFactory = <
+  SerializedErrorType = SerializedError,
+  Authentication = undefined,
+  ExtraApi extends CreateExtraApi = CreateExtraApi<void, undefined>
+>(
+  config: EndpointFactoryConfig<
+    SerializedErrorType,
+    Authentication,
+    ExtraApi
+  > = {}
+) => {
+  assert(
+    typeof config === 'object',
+    `\`createEndpointFactory\` configuration must be object, received ${typeof config}`
+  );
+  (
+    ['authenticate', 'extraApi', 'serializeError'] satisfies Array<
+      keyof typeof config
+    >
+  ).map((opt) =>
+    assert(
+      typeof config[opt] === 'function' || typeof config[opt] === 'undefined',
+      `\`${opt}\` callback must be function if provided, received ${typeof config[
+        opt
+      ]}`
+    )
+  );
+
+  return <
     Definitions extends MethodDefinitions<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
@@ -128,19 +145,73 @@ export const createEndpointFactory =
       ExtraApi
     >
   ) => {
+    assert(
+      typeof endpointConfig === 'object',
+      `configuration must be object, received ${typeof endpointConfig}`
+    );
+
     const {
       methods: buildMethods,
       default: buildDefault,
       disableAuthentication = false as DisableAuthentication,
     } = endpointConfig;
+
+    assert(
+      typeof buildMethods === 'function',
+      `\`methods\` callback must be function, received ${typeof buildMethods}`
+    );
+    assert(
+      typeof buildDefault === 'function' || typeof buildDefault === 'undefined',
+      `\`default\` callback must be function if provided, received ${typeof buildDefault}`
+    );
+    assert(
+      typeof disableAuthentication === 'boolean',
+      `\`disableAuthentication\` must be a boolean, received ${typeof disableAuthentication}`
+    );
+
     const builder: MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
     > = {
       method: (definition) => definition,
     };
+
     const methodDefinitions = buildMethods(builder);
+    assert(
+      typeof methodDefinitions === 'object',
+      `\`methods\` callback must return an object, received ${typeof methodDefinitions}`
+    );
+    // TODO: do we want to limit keys in runtime too?
+    const invalidDefinitions = Object.values(methodDefinitions).some(
+      (definition) =>
+        !(typeof definition === 'object' || typeof definition === 'undefined')
+    );
+    assert(
+      !invalidDefinitions,
+      invalidDefinitions
+        ? // ensure we only actually build a message if we need it
+          `returned \`methods\` object must have definitions (or undefined) for each key, received { ${Object.entries(
+            methodDefinitions
+          )
+            .filter(
+              ([, definition]) =>
+                !(
+                  typeof definition === 'object' ||
+                  typeof definition === 'undefined'
+                )
+            )
+            .map(([key, definition]) => `${key}: ${typeof definition}`)
+            .join(', ')} }`
+        : ''
+    );
+
     const defaultDefinition = buildDefault?.(builder);
+    assert(
+      typeof buildDefault === 'undefined' ||
+        typeof defaultDefinition === 'object',
+      `\`default\` callback must return an object, received ${typeof defaultDefinition}`
+    );
+
     return {
       methods: Object.fromEntries(
         Object.entries(methodDefinitions).map(([key, definition]) => [
@@ -198,3 +269,4 @@ export const createEndpointFactory =
       },
     } as EndpointDefinition<Definitions, Default, typeof config>;
   };
+};

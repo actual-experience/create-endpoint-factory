@@ -4,7 +4,6 @@ import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { GenericsFromHandler } from './types';
-import { id, satisfies } from './utils/types';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -33,11 +32,9 @@ describe('createEndpointFactory', () => {
 
     await testApiHandler({
       handler: endpoint.handler,
-      params: satisfies<
-        GenericsFromHandler<typeof endpoint.handler>['query']
-      >()({
+      params: {
         foo: 'bar',
-      }),
+      } satisfies GenericsFromHandler<typeof endpoint.handler>['query'],
       test: async ({ fetch }) => {
         const getRes = await fetch();
         expect(getRes.status).toBe(200);
@@ -47,9 +44,9 @@ describe('createEndpointFactory', () => {
 
         const postRes = await fetch({
           method: 'POST',
-          body: id<GenericsFromHandler<typeof endpoint.methods.post>['body']>(
-            'baz'
-          ),
+          body: 'baz' satisfies GenericsFromHandler<
+            typeof endpoint.methods.post
+          >['body'],
         });
         expect(postRes.status).toBe(201);
         expect(await postRes.json()).toBe<
@@ -306,6 +303,7 @@ describe('createEndpointFactory', () => {
       },
     });
   });
+
   it('should allow passing a function to derive more information about the request, and allow passing options to the function', async () => {
     const createEndpoint = createEndpointFactory({
       extraApi: (req, { includeFoo }: { includeFoo?: boolean } = {}) => ({
@@ -336,6 +334,7 @@ describe('createEndpointFactory', () => {
       },
     });
   });
+
   it('should allow returning a specific symbol to indicate that the response has already been sent', async () => {
     await testApiHandler({
       handler: createEndpointFactory()({
@@ -370,6 +369,7 @@ describe('createEndpointFactory', () => {
       },
     });
   });
+
   it('should allow conditionally including method definitions', async () => {
     const createEndpoint = createEndpointFactory();
     const makeEndpoint = (includePatch = false) =>
@@ -411,5 +411,67 @@ describe('createEndpointFactory', () => {
 
     expect(withoutPatch.methods.patch).toBe(undefined);
     expect(withPatch.methods.patch).toBeInstanceOf(Function);
+  });
+
+  type TestCase = [
+    func: () => void,
+    ...toThrowArgs: Parameters<jest.Matchers<void, () => void>['toThrow']>
+  ];
+  it.each<TestCase>([
+    [
+      // @ts-expect-error invalid config
+      () => createEndpointFactory(true),
+      '`createEndpointFactory` configuration must be object, received boolean',
+    ],
+    ...(
+      ['authenticate', 'extraApi', 'serializeError'] satisfies Array<
+        keyof NonNullable<Parameters<typeof createEndpointFactory>[0]>
+      >
+    ).map<TestCase>((opt) => [
+      // little confused why typescript isn't complaining here honestly
+      () => createEndpointFactory({ [opt]: false }),
+      `\`${opt}\` callback must be function if provided, received boolean`,
+    ]),
+    [
+      // @ts-expect-error endpoint config is required
+      () => createEndpointFactory()(),
+      'configuration must be object, received undefined',
+    ],
+    [
+      // @ts-expect-error methods needs to be a callback
+      () => createEndpointFactory()({ methods: false }),
+      '`methods` callback must be function, received boolean',
+    ],
+    [
+      // @ts-expect-error methods needs to return an object
+      () => createEndpointFactory()({ methods: () => false }),
+      '`methods` callback must return an object, received boolean',
+    ],
+    [
+      () =>
+        createEndpointFactory()({
+          methods: (build) => ({
+            // @ts-expect-error each method needs to be a definition or undefined
+            get: false,
+            // @ts-expect-error each method needs to be a definition or undefined
+            put: true,
+            patch: build.method({ handler: () => '' }),
+          }),
+        }),
+      'returned `methods` object must have definitions (or undefined) for each key, received { get: boolean, put: boolean }',
+    ],
+    [
+      // @ts-expect-error default needs to be a callback
+      () => createEndpointFactory()({ methods: () => ({}), default: false }),
+      '`default` callback must be function if provided, received boolean',
+    ],
+    [
+      () =>
+        // @ts-expect-error methods needs to return an object
+        createEndpointFactory()({ methods: () => ({}), default: () => false }),
+      '`default` callback must return an object, received boolean',
+    ],
+  ])('should throw runtime errors for invalid configurations', (fn, error) => {
+    expect(fn).toThrow(error);
   });
 });

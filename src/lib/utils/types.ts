@@ -74,10 +74,3 @@ export type TypeInvariant<
 export type Validator<T, Input = any, ExtraParams extends [...any[]] = []> =
   | TypeGuard<T, Input, ExtraParams>
   | TypeInvariant<T, Input, ExtraParams>;
-
-export const id = <T>(val: T) => val;
-
-export const satisfies =
-  <ToSatisfy>() =>
-  <Specific extends ToSatisfy>(val: Specific) =>
-    val;
