@@ -16,17 +16,28 @@ const sharedConfig = {
 new Generator({
   entry: 'src/index.ts',
   output: 'dist/index.d.ts',
-}).generate();
+})
+  .generate()
+  .then(
+    () => console.log('Types generated'),
+    (err) => console.log('Types failed to generate', err)
+  );
 
 build({
   ...sharedConfig,
   platform: 'node', // for CJS
   outfile: 'dist/index.js',
-});
+}).then(
+  (result) => console.log('CJS generated', result),
+  (err) => console.log('Types failed to generate', err)
+);
 
 build({
   ...sharedConfig,
   outfile: 'dist/index.esm.js',
   platform: 'neutral', // for ESM
   format: 'esm',
-});
+}).then(
+  (result) => console.log('ESM generated', result),
+  (err) => console.log('Types failed to generate', err)
+);
