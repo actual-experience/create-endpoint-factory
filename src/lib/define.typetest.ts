@@ -2,8 +2,8 @@
 import { pipeline } from 'stream/promises';
 import type { SerializedError } from './utils';
 import type { NextApiHandler, NextApiRequest } from 'next';
-import { expectExactType, expectNotAny, expectType } from './typetest-utils';
-import { alwaysMatch, createEndpointFactory, nothing } from '.';
+import { expectExactType, expectNotAny, expectType } from './utils/typetests';
+import { alwaysMatch, createEndpointFactory, nothing } from '..';
 
 const createEndpoint = createEndpointFactory();
 

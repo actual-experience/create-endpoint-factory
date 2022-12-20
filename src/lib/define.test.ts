@@ -2,9 +2,9 @@ import stream from 'stream';
 import { promisify } from 'util';
 import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
-import { id, satisfies } from './ts-utils';
-import type { GenericsFromHandler } from '.';
-import { nothing, ResError, createEndpointFactory } from '.';
+import { id, satisfies } from './utils/types';
+import { nothing, ResError, createEndpointFactory } from '..';
+import { GenericsFromHandler } from './types';
 
 const pipeline = promisify(stream.pipeline);
 

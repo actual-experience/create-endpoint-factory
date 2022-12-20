@@ -1,6 +1,6 @@
 /* eslint-disable */
 // from https://github.com/reduxjs/redux-toolkit/
-import type { IsAny, IsUnknown } from './ts-utils';
+import type { IsAny, IsUnknown } from './types';
 
 export function expectType<T>(t: T): T {
   return t;
