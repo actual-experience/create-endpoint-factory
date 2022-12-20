@@ -19,6 +19,7 @@ const endpoint = createEndpoint({
           if (!response) {
             throw new Error('No response');
           } else if (response !== 'foo') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             throw failWithCode(500, 'Invalid response', { response });
           }
         },

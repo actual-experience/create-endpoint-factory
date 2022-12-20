@@ -10,6 +10,7 @@ const hasSymbol =
  * If undefined is returned (or there are no return statements), the status will be set to 204 and .end() will be called.
  */
 // inspired by Immer https://github.com/immerjs/immer/
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 export const nothing: Nothing = hasSymbol
   ? Symbol.for('create-endpoint-factory-nothing')
   : ({ ['create-endpoint-factory-nothing']: true } as any);

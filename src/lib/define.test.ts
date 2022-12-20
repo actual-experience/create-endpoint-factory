@@ -341,7 +341,7 @@ describe('createEndpointFactory', () => {
       handler: createEndpointFactory()({
         methods: (build) => ({
           get: build.method<typeof nothing>({
-            handler: async (req, res: NextApiResponse<'foo'>) => {
+            handler: (req, res: NextApiResponse<'foo'>) => {
               res.status(205);
               res.json('foo');
               return nothing;
@@ -362,7 +362,9 @@ describe('createEndpointFactory', () => {
         expect(getRes.status).toBe(205);
         expect(await getRes.json()).toBe('foo');
 
-        const postRes = await fetch({ method: 'POST' });
+        const postRes = (await fetch({
+          method: 'POST',
+        })) as unknown as Response;
         expect(postRes.status).toBe(205);
         expect(await postRes.text()).toBe('foo');
       },

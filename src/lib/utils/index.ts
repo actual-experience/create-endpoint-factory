@@ -21,12 +21,12 @@ const commonProperties: Array<keyof SerializedError> = [
  *
  * @public
  */
-export const miniSerializeError = (value: any): SerializedError => {
+export const miniSerializeError = (value: unknown): SerializedError => {
   if (typeof value === 'object' && value !== null) {
     const simpleError: SerializedError = {};
     for (const property of commonProperties) {
-      if (typeof value[property] === 'string') {
-        simpleError[property] = value[property];
+      if (typeof (value as Record<string, string>)[property] === 'string') {
+        simpleError[property] = (value as Record<string, string>)[property];
       }
     }
 

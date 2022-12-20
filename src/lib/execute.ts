@@ -88,6 +88,7 @@ export const executeDefinition = async <
         undefined,
         Authentication
       >,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
     };
     validate(validators?.body, req.body, [400, 'Invalid body']);
