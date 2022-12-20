@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type { ConditionalBool } from './utils/types';
-import type { SerializedError } from './utils';
-import { HttpMethod } from './constants';
-import {
+import type { HttpMethod } from './constants';
+import { executeDefinition } from './execute';
+import type {
   CreateExtraApi,
   EndpointConfig,
   EndpointDefinition,
@@ -12,7 +11,8 @@ import {
   MethodDefinition,
   MethodDefinitions,
 } from './types';
-import { executeDefinition } from './execute';
+import type { SerializedError } from './utils';
+import type { ConditionalBool } from './utils/types';
 
 /**
  * Build an API handler factory with properly typed handlers per method.
@@ -160,7 +160,7 @@ export const createEndpointFactory =
         default: (req: NextApiRequest, res: NextApiResponse) =>
           executeDefinition(
             config,
-            defaultDefinition!,
+            defaultDefinition,
             disableAuthentication,
             req,
             res
@@ -181,7 +181,7 @@ export const createEndpointFactory =
         } else if (defaultDefinition) {
           return await executeDefinition(
             config,
-            defaultDefinition!,
+            defaultDefinition,
             disableAuthentication,
             req,
             res

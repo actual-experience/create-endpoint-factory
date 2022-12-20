@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { pipeline } from 'stream/promises';
-import type { SerializedError } from './utils';
 import type { NextApiHandler, NextApiRequest } from 'next';
-import { expectExactType, expectNotAny, expectType } from './utils/typetests';
 import { alwaysMatch, createEndpointFactory, nothing } from '..';
+import type { SerializedError } from './utils';
+import { expectExactType, expectNotAny, expectType } from './utils/typetests';
 
 const createEndpoint = createEndpointFactory();
 

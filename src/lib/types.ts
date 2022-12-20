@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
-import { HttpMethod, NothingToAny, ResError, ResSuccess } from './constants';
-import { SerializedError } from './utils';
-import {
+import type { HttpMethod, NothingToAny, ResError, ResSuccess } from './constants';
+import type { SerializedError } from './utils';
+import type {
   ConditionalBool,
   Id,
   IfMaybeUndefined,
@@ -41,11 +41,11 @@ export interface CustomizedNextApiHandler<
   _query: Query;
 }
 
-export type MethodHandlerApi<
+export interface MethodHandlerApi<
   ReturnType = any,
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   /**
    * Return a successful response with a specified HTTP code
    * ```js
@@ -78,7 +78,7 @@ export type MethodHandlerApi<
    * Information returned from the `extraApi` function.
    */
   extra: ExtraApiReturn<ExtraApi>;
-};
+}
 
 export type MethodDefinition<
   ReturnType = any,
@@ -168,10 +168,10 @@ export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
     ? { error: Error; authentication: Authentication; extra: ExtraApi }
     : never;
 
-export type MethodBuilder<
+export interface MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   /**
    * Define a method handler and associated configuration.
    */
@@ -188,7 +188,7 @@ export type MethodBuilder<
       ExtraApi
     >
   ) => typeof definition;
-};
+}
 
 export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
@@ -288,11 +288,11 @@ export type ExtraApiOptions<
 
 export type ExtraApiReturn<EA extends CreateExtraApi> = ReturnType<EA>;
 
-export type EndpointFactoryConfig<
+export interface EndpointFactoryConfig<
   SerializedErrorType = any,
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   /**
    * Receive any thrown errors (or returned `failWithCode`s) and return a serialized format suitable for sending via `json`.
    *
@@ -312,9 +312,9 @@ export type EndpointFactoryConfig<
    * Derive extra information about the request, and include it as `extra` in the handlerApi object.
    */
   extraApi?: ExtraApi;
-};
+}
 
-export type EndpointConfig<
+export interface EndpointConfig<
   Definitions extends MethodDefinitions<
     ConditionalBool<DisableAuthentication, undefined, Authentication>,
     ExtraApi
@@ -331,7 +331,7 @@ export type EndpointConfig<
   DisableAuthentication extends boolean = false,
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   /**
    * Callback to define individual method handlers.
    * ```ts
@@ -361,4 +361,4 @@ export type EndpointConfig<
    * The `authenticate` function from createEndpoint will not be used, and `handlerApi.authentication` will be undefined.
    */
   disableAuthentication?: DisableAuthentication;
-};
+}

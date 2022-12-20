@@ -42,6 +42,7 @@ export type IsUnknown<T, True, False = never> = unknown extends T
 export type NoInfer<T> = [T][T extends any ? 0 : never];
 
 /** Merge object intersections visually */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type Id<T> = { [K in keyof T]: T[K] } & {};
 
 /** Make specified keys optional */
@@ -56,19 +57,19 @@ export type PickRequired<T, K extends keyof T> = Id<
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type TypeGuard<T, Input = any, ExtraParams extends [...any[]] = []> = {
-  (input: Input, ...params: ExtraParams): input is T extends Input ? T : never;
-};
+export type TypeGuard<T, Input = any, ExtraParams extends [...any[]] = []> = (
+  input: Input,
+  ...params: ExtraParams
+) => input is T extends Input ? T : never;
 
 export type TypeInvariant<
   T,
   Input = any,
   ExtraParams extends [...any[]] = []
-> = {
-  (input: Input, ...params: ExtraParams): asserts input is T extends Input
-    ? T
-    : never;
-};
+> = (
+  input: Input,
+  ...params: ExtraParams
+) => asserts input is T extends Input ? T : never;
 
 export type Validator<T, Input = any, ExtraParams extends [...any[]] = []> =
   | TypeGuard<T, Input, ExtraParams>

@@ -1,13 +1,14 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { nothing, ResError, ResSuccess } from './constants';
-import {
+import type {
   CreateExtraApi,
   EndpointFactoryConfig,
   MethodDefinition,
   MethodHandlerApi,
 } from './types';
-import { miniSerializeError, SerializedError } from './utils';
-import { ConditionalBool, Validator } from './utils/types';
+import type { SerializedError } from './utils';
+import { miniSerializeError } from './utils';
+import type { ConditionalBool, Validator } from './utils/types';
 
 const failWithCode: MethodHandlerApi['failWithCode'] = (...args) =>
   new ResError(...args);
