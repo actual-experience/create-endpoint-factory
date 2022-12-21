@@ -34,7 +34,7 @@ build({
 
 build({
   ...sharedConfig,
-  outfile: 'dist/index.esm.js',
+  outfile: 'dist/index.mjs',
   platform: 'node',
   format: 'esm',
 }).then(
