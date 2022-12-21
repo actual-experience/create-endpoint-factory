@@ -35,7 +35,7 @@ build({
 build({
   ...sharedConfig,
   outfile: 'dist/index.esm.js',
-  platform: 'neutral', // for ESM
+  platform: 'node',
   format: 'esm',
 }).then(
   (result) => console.log('ESM generated', result),
