@@ -471,7 +471,10 @@ describe('createEndpointFactory', () => {
         createEndpointFactory()({ methods: () => ({}), default: () => false }),
       '`default` callback must return an object, received boolean',
     ],
-  ])('should throw runtime errors for invalid configurations', (fn, error) => {
-    expect(fn).toThrow(error);
-  });
+  ])(
+    'should throw runtime errors for invalid configurations',
+    (fn, ...args) => {
+      expect(fn).toThrow(...args);
+    }
+  );
 });
