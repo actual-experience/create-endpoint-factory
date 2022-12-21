@@ -29,7 +29,7 @@ build({
   outfile: 'dist/index.js',
 }).then(
   (result) => console.log('CJS generated', result),
-  (err) => console.log('Types failed to generate', err)
+  (err) => console.log('CJS failed to generate', err)
 );
 
 build({
@@ -39,5 +39,5 @@ build({
   format: 'esm',
 }).then(
   (result) => console.log('ESM generated', result),
-  (err) => console.log('Types failed to generate', err)
+  (err) => console.log('ESM failed to generate', err)
 );
