@@ -13,7 +13,7 @@ import type {
   MethodHandlerApi,
 } from './types';
 import type { SerializedError } from './utils';
-import { wrapConstructor, miniSerializeError } from './utils';
+import { miniSerializeError } from './utils';
 import type { ConditionalBool, Validator } from './utils/types';
 
 const validate = <T, Input = any>(
