@@ -2,9 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   failWithCode,
   succeedWithCode,
-  nothing,
   ResError,
   ResSuccess,
+  isNothing,
 } from './constants';
 import type {
   CreateExtraApi,
@@ -97,7 +97,7 @@ export const executeDefinition = async <
     validate(validators?.body, req.body, [400, 'Invalid body']);
     validate(validators?.query, req.query, [400, 'Invalid query']);
     const response = await handler(req, res, api);
-    if (response === nothing || res.writableEnded) {
+    if (isNothing(response) || res.writableEnded) {
       return;
     }
     if (response instanceof ResError) {

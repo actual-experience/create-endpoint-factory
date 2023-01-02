@@ -24,6 +24,9 @@ class Nothing {
   private _!: unique symbol;
 }
 
+/** checks value is equal to CEF's `nothing` */
+export const isNothing = (val: unknown): val is Nothing => val === nothing;
+
 export type NothingToAny<T> = T extends Nothing ? any : T;
 
 const httpMethods = [
