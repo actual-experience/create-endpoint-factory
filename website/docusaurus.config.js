@@ -46,7 +46,7 @@ const config = {
         },
         blog: false,
         theme: {
-          customCss: require.resolve('./src/scss/custom.scss'),
+          customCss: require.resolve('./src/scss/global.scss'),
         },
       }),
     ],

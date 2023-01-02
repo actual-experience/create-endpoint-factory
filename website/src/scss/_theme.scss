@@ -1,0 +1,35 @@
+@use 'sass:color';
+@use 'sass:map';
+
+// list of arguments for color.adjust
+$shades: (
+  'lightest': (
+    lightness: 30%,
+  ),
+  'lighter': (
+    lightness: 15%,
+  ),
+  'light': (
+    lightness: 10%,
+  ),
+  '': (),
+  'dark': (
+    lightness: -10%,
+  ),
+  'darker': (
+    lightness: -15%,
+  ),
+  'darkest': (
+    lightness: -30%,
+  ),
+);
+
+@mixin infima-shades($prefix, $color, $custom-shades: (), $separator: '-') {
+  $final-shades: map.deep-merge($shades, $custom-shades);
+  @each $shade, $args in $final-shades {
+    --#{$prefix}#{if($prefix == '' or $shade == '', '', $separator)}#{$shade}: #{color.adjust(
+        $color,
+        $args...
+      )};
+  }
+}

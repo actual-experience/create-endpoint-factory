@@ -1,0 +1,41 @@
+@use './theme';
+
+@import url('https://fonts.googleapis.com/css2?family=Mulish:wght@200..900&family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  @include theme.infima-shades('ifm-color-primary', #58c4aa);
+  --ifm-font-family-base: Mulish, -apple-system, BlinkMacSystemFont, Segoe UI,
+    Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
+    sans-serif;
+  --ifm-font-family-monospace: 'Fira Code', SFMono-Regular, Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --docusaurus-highlighted-code-line-bg: #{rgba(black, 0.1)};
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+html[data-theme='dark'] {
+  @include theme.infima-shades('ifm-color-primary', #01c3b8);
+  --ifm-background-color: #270b56;
+  --ifm-background-surface-color: #270b56;
+  --docusaurus-highlighted-code-line-bg: #{rgba(black, 0.3)};
+
+  .navbar {
+    background-color: var(--ifm-background-color);
+    border-bottom: 1px solid rgba(white, 0.1);
+  }
+}
+
+pre {
+  font-variant-ligatures: none; // code ligatures bad >:(
+}
+
+.footer--dark {
+  background-color: #270b56;
+}
