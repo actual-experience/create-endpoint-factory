@@ -1,5 +1,8 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
+const { transpileCodeblocks } = require('remark-typescript-tools');
+const path = require('path');
+const { name, version } = require('../package.json');
 
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
@@ -40,9 +43,29 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
+          editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/website`,
+          remarkPlugins: [
+            [
+              transpileCodeblocks,
+              /** @type {import('remark-typescript-tools/dist/transpileCodeblocks/plugin').Settings} */
+              ({
+                compilerSettings: {
+                  tsconfig: require.resolve('./tsconfig.json'),
+                  externalResolutions: {
+                    [name]: {
+                      resolvedPath: path.resolve(__dirname, '../src'),
+                      packageId: {
+                        name,
+                        subModuleName: 'index.ts',
+                        version,
+                      },
+                    },
+                  },
+                },
+                fileExtensions: ['.md', '.mdx'],
+              }),
+            ],
+          ],
         },
         blog: false,
         theme: {
