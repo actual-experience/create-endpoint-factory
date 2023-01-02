@@ -1,3 +1,7 @@
+export type KeysMatching<T, V> = {
+  [K in keyof T]-?: T[K] extends V ? K : never;
+}[keyof T];
+
 export type ConditionalBool<
   T extends boolean,
   IfTrue,
@@ -15,9 +19,6 @@ export type IsAny<T, True, False = never> =
   // test if we are going the left AND right path in the condition
   true | false extends (T extends never ? true : false) ? True : False;
 
-/**
- * @internal
- */
 export type IfMaybeUndefined<P, True, False> = [undefined] extends [P]
   ? True
   : False;
@@ -26,7 +27,6 @@ export type IfMaybeUndefined<P, True, False> = [undefined] extends [P]
  * return True if T is `unknown`, otherwise return False
  * taken from https://github.com/joonhocho/tsdef
  *
- * @internal
  */
 export type IsUnknown<T, True, False = never> = unknown extends T
   ? IsAny<T, False, True>
@@ -37,7 +37,6 @@ export type IsUnknown<T, True, False = never> = unknown extends T
  * "widen" the type by accident if it is a generic that should be inferred
  * from elsewhere.
  *
- * @internal
  */
 export type NoInfer<T> = [T][T extends any ? 0 : never];
 
@@ -74,3 +73,5 @@ export type TypeInvariant<
 export type Validator<T, Input = any, ExtraParams extends [...any[]] = []> =
   | TypeGuard<T, Input, ExtraParams>
   | TypeInvariant<T, Input, ExtraParams>;
+
+export const id = <T>(t: T) => t;

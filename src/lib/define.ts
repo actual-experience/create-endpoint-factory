@@ -13,7 +13,8 @@ import type {
   MethodDefinitions,
 } from './types';
 import type { SerializedError } from './utils';
-import type { ConditionalBool } from './utils/types';
+import type { ConditionalBool, KeysMatching } from './utils/types';
+import { id } from './utils/types';
 
 /**
  * Build an API handler factory with properly typed handlers per method.
@@ -108,11 +109,14 @@ export const createEndpointFactory = <
     typeof config === 'object',
     `\`createEndpointFactory\` configuration must be object, received ${typeof config}`
   );
-  (
-    ['authenticate', 'extraApi', 'serializeError'] satisfies Array<
-      keyof typeof config
+  id<
+    Array<
+      KeysMatching<
+        typeof config,
+        ExtraApi | ((...args: any[]) => any) | undefined
+      >
     >
-  ).map((opt) =>
+  >(['authenticate', 'serializeError', 'extraApi']).map((opt) =>
     assert(
       typeof config[opt] === 'function' || typeof config[opt] === 'undefined',
       `\`${opt}\` callback must be function if provided, received ${typeof config[
