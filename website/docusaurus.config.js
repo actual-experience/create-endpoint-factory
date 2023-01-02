@@ -9,10 +9,10 @@ const projectName = 'create-endpoint-factory';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Create Endpoint Factory',
+  title: 'Create Endpoint Handler',
   tagline: 'Dinosaurs are cool',
-  url: 'https://actual-experience.github.io',
-  baseUrl: '/create-endpoint-factory',
+  url: `https://${organizationName}.github.io`,
+  baseUrl: `/${projectName}`,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
@@ -39,17 +39,20 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
+          routeBasePath: '/',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
         },
         blog: false,
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve('./src/scss/custom.scss'),
         },
       }),
     ],
   ],
+
+  plugins: ['docusaurus-plugin-sass'],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -58,7 +61,7 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: 'My Site',
+        title: 'Create Endpoint Handler',
         logo: {
           alt: 'My Site Logo',
           src: 'img/logo.svg',
@@ -79,26 +82,6 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Tutorial',
-                to: '/docs/intro',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              {
-                label: 'GitHub',
-                href: `https://github.com/${organizationName}/${projectName}`,
-              },
-            ],
-          },
-        ],
         copyright: `Copyright © ${new Date().getFullYear()} Actual Experience plc. Built with Docusaurus.`,
       },
       prism: {
