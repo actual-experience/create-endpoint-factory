@@ -27,7 +27,7 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Book;
+export declare function getBookFromReq(req: NextApiRequest): Book | undefined;
 
 // file: src/schemas/index.ts noEmit
 import { ZodSchema } from 'zod';
@@ -102,13 +102,19 @@ export default createEndpoint({
       },
       handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
+        }
         await book.update(req.body);
         // we don't return anything, so code is automatically 204
       },
     }),
     delete: build.method<void>({
-      handler: async (req) => {
+      handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
+        }
         await book.destroy();
       },
     }),
@@ -134,7 +140,7 @@ export default createEndpoint({
         ),
         response: alwaysMatch<{ token: string }>(),
       },
-      handler: async (req, res, { failWithCode }) => {
+      handler: async (req) => {
         const token = await getTokenForBody(req.body);
         return { token };
       },
