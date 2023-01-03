@@ -77,6 +77,7 @@ $dracula: (
         error: (
           border: map.get($colors, danger),
           background: util.tintOrShade(map.get($colors, danger), 85%),
+          number: map.get($colors, danger),
         ),
       ),
     )
@@ -119,8 +120,13 @@ html[data-theme='dark'] {
   --ifm-background-surface-color: var(--ifm-color-background);
 }
 
-pre {
-  font-variant-ligatures: none; // code ligatures bad >:(
+@each $ligature in (none, normal) {
+  [data-ligatures='#{$ligature}'] {
+    pre,
+    code {
+      font-variant-ligatures: $ligature;
+    }
+  }
 }
 
 .footer--dark {

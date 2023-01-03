@@ -6,6 +6,7 @@ const { name, version } = require('../package.json');
 
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const loadLigature = require('./plugins/load-ligature');
 
 const organizationName = 'actual-experience';
 const projectName = 'create-endpoint-factory';
@@ -85,7 +86,7 @@ const config = {
     ],
   ],
 
-  plugins: ['docusaurus-plugin-sass'],
+  plugins: ['docusaurus-plugin-sass', loadLigature],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -131,6 +132,9 @@ const config = {
         }),
       },
     }),
+  customFields: {
+    defaultLigatures: 'normal',
+  },
 };
 
 module.exports = config;
