@@ -10,21 +10,39 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  @include theme.infima-shades('ifm-color-primary', #58c4aa);
+  @include theme.infima-theme(
+    (
+      primary: #58c4aa,
+      success: #4fb47e,
+      info: #2998ff,
+      warning: #f79128,
+      danger: #ff4646,
+    )
+  );
   --ifm-font-family-base: Mulish, -apple-system, BlinkMacSystemFont, Segoe UI,
     Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
     sans-serif;
   --ifm-font-family-monospace: 'Fira Code', SFMono-Regular, Menlo, Monaco,
     Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --docusaurus-highlighted-code-line-bg: #{rgba(black, 0.1)};
+  --docusaurus-highlighted-code-line-bg: #fff8c5;
+  --docusaurus-highlighted-code-line-border: #{rgba(#d4a72c, 0.4)};
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 html[data-theme='dark'] {
-  @include theme.infima-shades('ifm-color-primary', #01c3b8);
+  @include theme.infima-theme(
+    (
+      primary: #01c3b8,
+      success: #99d2b2,
+      info: #92cbff,
+      warning: #fdb85b,
+      danger: #fa9796,
+    )
+  );
   --ifm-background-color: #270b56;
   --ifm-background-surface-color: #270b56;
-  --docusaurus-highlighted-code-line-bg: #{rgba(black, 0.3)};
+  --docusaurus-highlighted-code-line-bg: #{rgba(#bd93f9, 0.2)};
+  --docusaurus-highlighted-code-line-border: #bd93f9;
 
   .navbar {
     background-color: var(--ifm-background-color);
@@ -38,4 +56,8 @@ pre {
 
 .footer--dark {
   background-color: #270b56;
+}
+
+.theme-code-block-highlighted-line {
+  box-shadow: inset 2px 0 0 var(--docusaurus-highlighted-code-line-border);
 }

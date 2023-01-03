@@ -13,7 +13,6 @@ const projectName = 'create-endpoint-factory';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Create Endpoint Handler',
-  tagline: 'Dinosaurs are cool',
   url: `https://${organizationName}.github.io`,
   baseUrl: `/${projectName}`,
   onBrokenLinks: 'throw',

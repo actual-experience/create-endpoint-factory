@@ -4,6 +4,26 @@ sidebar_position: 1
 
 # hi!
 
+:::note Note
+Noted!
+:::
+
+:::tip Tip
+Nice!
+:::
+
+:::info Information
+Some info!
+:::
+
+:::caution Warning
+Watch out!
+:::
+
+:::danger Danger
+Spooky!
+:::
+
 ```ts title="Full example, using Zod for schemas and Sequelize for database interaction"
 // file: src/logic/server/auth.ts noEmit
 export declare function getAuthTokens(headers: any): { tokens: true };
@@ -27,7 +47,7 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Book | undefined;
+export declare function getBookFromReq(req: NextApiRequest): Book;
 
 // file: src/schemas/index.ts noEmit
 import { ZodSchema } from 'zod';
@@ -46,7 +66,7 @@ export const BookSchema = z.object({
   id: z.number(),
   name: z.string(),
   author: z.string(),
-});
+}) satisfies ZodSchema<InferAttributes<Book>>;
 
 // file: src/logic/server/index.ts
 import { createEndpointFactory } from 'next-create-endpoint-handler';
@@ -65,14 +85,17 @@ import { BookSchema } from '../../../src/schemas/books';
 
 export default createEndpoint({
   methods: (build) => ({
+    // highlight-next-line
     get: build.method<{ books: Book[] }>({
       handler: async () => ({ books: await Book.findAll() }),
     }),
     post: build.method({
+      // highlight-start
       validators: {
         body: schemaToInvariant(BookSchema.omit({ id: true })),
         response: alwaysMatch<{ id: number }>(),
       },
+      // highlight-end
       handler: async (req, res, { failWithCode, succeedWithCode }) => {
         const { id } = await Book.create(req.body);
         res.setHeader('Location', `api/books/${id}`);

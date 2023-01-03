@@ -1,7 +1,8 @@
 @use 'sass:color';
 @use 'sass:map';
+@use 'sass:meta';
 
-// list of arguments for color.adjust
+// list of arguments for color.adjust - or just colours
 $shades: (
   'lightest': (
     lightness: 30%,
@@ -12,7 +13,6 @@ $shades: (
   'light': (
     lightness: 10%,
   ),
-  '': (),
   'dark': (
     lightness: -10%,
   ),
@@ -26,10 +26,22 @@ $shades: (
 
 @mixin infima-shades($prefix, $color, $custom-shades: (), $separator: '-') {
   $final-shades: map.deep-merge($shades, $custom-shades);
+  --#{$prefix}: #{$color};
   @each $shade, $args in $final-shades {
-    --#{$prefix}#{if($prefix == '' or $shade == '', '', $separator)}#{$shade}: #{color.adjust(
-        $color,
-        $args...
+    --#{$prefix}#{if($prefix == '' or $shade == '', '', $separator)}#{$shade}: #{if(
+        meta.type-of($args) == color,
+        $args,
+        color.adjust($color, $args...)
       )};
+  }
+}
+
+@mixin infima-theme($colors) {
+  @each $name, $color in $colors {
+    @include infima-shades(
+      'ifm-color-' + $name,
+      if(meta.type-of($color) == color, $color, map.get($color, color)),
+      if(meta.type-of($color) == color, (), map.get($color, shades))
+    );
   }
 }
