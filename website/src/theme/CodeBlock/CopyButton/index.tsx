@@ -19,7 +19,10 @@ export default function CopyButtonWrapper(props: Props): JSX.Element {
         disabled={!isBrowser}
         onClick={() => setLigature(ligature === 'none' ? 'normal' : 'none')}
       >
-        <code style={{ lineHeight: 'initial' }}>=&gt;</code> Ligatures
+        <code aria-hidden style={{ lineHeight: 'initial' }}>
+          =&gt;
+        </code>
+        {' Ligatures'}
       </button>
     </>
   );

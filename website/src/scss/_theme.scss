@@ -52,6 +52,24 @@ $contrast: (
   }
 }
 
+@mixin infima-emphasis($stops: ()) {
+  $start: map.get($stops, 0);
+  $end: map.get($stops, 1000);
+  @if (meta.type-of($start) == color and meta.type-of($end) == color) {
+    @for $i from 0 through 10 {
+      $stop: $i * 100;
+      $color: map.get($stops, $stop);
+      --ifm-color-emphasis-#{$stop}: #{if(
+          $color,
+          $color,
+          color.mix($start, $end, ($i * -10%) + 100%)
+        )};
+    }
+  } @else {
+    @error 'Invalid stops provided #{meta.inspect($stops)}';
+  }
+}
+
 @mixin infima-theme($theme) {
   $colors: map.get($theme, colors);
   @each $name, $color in if($colors, $colors, ()) {
@@ -62,6 +80,11 @@ $contrast: (
       if(meta.type-of($color) == color, (), map.get($color, contrast)),
       $dark: map.get($theme, dark)
     );
+  }
+
+  $emphasis: map.get($theme, emphasis);
+  @if ($emphasis) {
+    @include infima-emphasis($emphasis);
   }
 
   $fonts: map.get($theme, fonts);

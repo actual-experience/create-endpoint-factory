@@ -39,6 +39,10 @@ $dracula: (
   @include theme.infima-theme(
     (
       colors: $colors,
+      emphasis: (
+        0: white,
+        1000: util.tintOrShade(#270b56, -15%),
+      ),
       fonts: (
         base: (
           Mulish,
@@ -99,6 +103,10 @@ html[data-theme='dark'] {
     (
       dark: true,
       colors: $colors,
+      emphasis: (
+        0: util.tintOrShade(#270b56, -15%),
+        1000: white,
+      ),
     )
   );
   @include theme.docusaurus-theme(
