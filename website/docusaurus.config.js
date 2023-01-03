@@ -61,7 +61,10 @@ const config = {
               /** @type {import('remark-typescript-tools/dist/transpileCodeblocks/plugin').Settings} */
               ({
                 compilerSettings: {
-                  tsconfig: require.resolve('./tsconfig.json'),
+                  tsconfig: path.resolve(
+                    __dirname,
+                    './tsconfig.transpile.json'
+                  ),
                   externalResolutions: {
                     [name]: {
                       resolvedPath: path.resolve(__dirname, '../src'),
