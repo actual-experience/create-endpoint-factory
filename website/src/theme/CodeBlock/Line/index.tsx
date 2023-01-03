@@ -28,7 +28,9 @@ export default function CodeBlockLine({
     <span {...lineProps}>
       {showLineNumbers ? (
         <>
-          <span className={styles.codeLineNumber} />
+          <span
+            className={clsx(styles.codeLineNumber, 'code-block-line-number')}
+          />
           <span className={styles.codeLineContent}>{lineTokens}</span>
         </>
       ) : (

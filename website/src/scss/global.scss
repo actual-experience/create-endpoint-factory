@@ -1,6 +1,23 @@
-@use './theme';
+@use 'sass:color';
+@use 'sass:map';
+@use 'theme';
+@use 'util';
 
 @import url('https://fonts.googleapis.com/css2?family=Mulish:wght@200..900&family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
+$dracula: (
+  background: #282a36,
+  current-line: #44475a,
+  foreground: #f8f8f2,
+  comment: #6272a4,
+  cyan: #8be9fd,
+  green: #50fa7b,
+  orange: #ffb86c,
+  pink: #ff79c6,
+  purple: #bd93f9,
+  red: #ff5555,
+  yellow: #f1fa8c,
+);
 
 /**
  * Any CSS included here will be global. The classic template
@@ -10,44 +27,96 @@
 
 /* You can override the default Infima variables here. */
 :root {
+  $colors: (
+    primary: #58c4aa,
+    secondary: #e967ff,
+    success: #4fb47e,
+    info: #2998ff,
+    warning: #f79128,
+    danger: #ff4646,
+    background: white,
+  );
   @include theme.infima-theme(
     (
-      primary: #58c4aa,
-      success: #4fb47e,
-      info: #2998ff,
-      warning: #f79128,
-      danger: #ff4646,
+      colors: $colors,
+      fonts: (
+        base: (
+          Mulish,
+          -apple-system,
+          BlinkMacSystemFont,
+          Segoe UI,
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          Fira Sans,
+          Droid Sans,
+          Helvetica Neue,
+          sans-serif,
+        ),
+        monospace: (
+          'Fira Code',
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          'Liberation Mono',
+          'Courier New',
+          monospace,
+        ),
+      ),
     )
   );
-  --ifm-font-family-base: Mulish, -apple-system, BlinkMacSystemFont, Segoe UI,
-    Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-    sans-serif;
-  --ifm-font-family-monospace: 'Fira Code', SFMono-Regular, Menlo, Monaco,
-    Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --docusaurus-highlighted-code-line-bg: #fff8c5;
-  --docusaurus-highlighted-code-line-border: #{rgba(#d4a72c, 0.4)};
+  @include theme.docusaurus-theme(
+    (
+      highlights: (
+        highlighted: (
+          border: rgba(#d4a72c, 0.4),
+          background: #fff8c5,
+        ),
+        error: (
+          border: map.get($colors, danger),
+          background: util.tintOrShade(map.get($colors, danger), 85%),
+        ),
+      ),
+    )
+  );
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 html[data-theme='dark'] {
+  $colors: (
+    primary: #01c3b8,
+    secondary: #f098ff,
+    success: #99d2b2,
+    info: #92cbff,
+    warning: #fdb85b,
+    danger: #fa9796,
+    background: #270b56,
+  );
   @include theme.infima-theme(
     (
-      primary: #01c3b8,
-      success: #99d2b2,
-      info: #92cbff,
-      warning: #fdb85b,
-      danger: #fa9796,
+      dark: true,
+      colors: $colors,
     )
   );
-  --ifm-background-color: #270b56;
-  --ifm-background-surface-color: #270b56;
-  --docusaurus-highlighted-code-line-bg: #{rgba(#bd93f9, 0.2)};
-  --docusaurus-highlighted-code-line-border: #bd93f9;
-
-  .navbar {
-    background-color: var(--ifm-background-color);
-    border-bottom: 1px solid rgba(white, 0.1);
-  }
+  @include theme.docusaurus-theme(
+    (
+      highlights: (
+        highlighted: (
+          border: map.get($dracula, purple),
+          background: rgba(map.get($dracula, purple), 0.2),
+        ),
+        error: (
+          border: map.get($dracula, red),
+          background: rgba(map.get($dracula, red), 0.2),
+          number: map.get($dracula, red),
+        ),
+      ),
+    )
+  );
+  --ifm-background-color: var(--ifm-color-background);
+  --ifm-background-surface-color: var(--ifm-color-background);
 }
 
 pre {
@@ -55,9 +124,43 @@ pre {
 }
 
 .footer--dark {
+  border-top: 1px solid var(--ifm-toc-border-color);
   background-color: #270b56;
+  color: var(--ifm-color-white);
+  --ifm-footer-title-color: var(--ifm-color-primary);
+  --ifm-footer-link-color: var(--ifm-color-white);
+  .footer__link-item {
+    &:hover {
+      color: var(--ifm-color-primary);
+    }
+  }
+  .footer__copyright {
+    opacity: 0.5;
+  }
 }
 
 .theme-code-block-highlighted-line {
   box-shadow: inset 2px 0 0 var(--docusaurus-highlighted-code-line-border);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.header-github-link:hover {
+  opacity: 0.6;
+}
+
+.header-github-link::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  display: flex;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E")
+    no-repeat;
+}
+
+[data-theme='dark'] .header-github-link::before {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E")
+    no-repeat;
 }

@@ -10,6 +10,17 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const organizationName = 'actual-experience';
 const projectName = 'create-endpoint-factory';
 
+/**
+ * Creates magic comments from a map of names to classes (or pass `true` for a key to use `code-block-${name}-line` as the class)
+ * @type {(classMap: Record<string,string | true>) => import('@docusaurus/theme-common/src/utils/codeBlockUtils').MagicCommentConfig[]}
+ */
+const makeMagicComments = (classMap) =>
+  Object.entries(classMap).map(([name, className]) => ({
+    className: className === true ? `code-block-${name}-line` : className,
+    line: `${name}-next-line`,
+    block: { start: `${name}-start`, end: `${name}-end` },
+  }));
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Create Endpoint Handler',
@@ -80,6 +91,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       colorMode: {
+        defaultMode: 'dark',
         respectPrefersColorScheme: true,
       },
       navbar: {
@@ -92,18 +104,31 @@ const config = {
         items: [
           {
             href: `https://github.com/${organizationName}/${projectName}`,
-            label: 'GitHub',
             position: 'right',
+            className: 'header-github-link',
+            'aria-label': 'GitHub repository',
           },
         ],
       },
       footer: {
         style: 'dark',
+        links: [
+          {
+            title: 'Company',
+            items: [
+              { label: 'Website', href: 'https://actual-experience.com/' },
+            ],
+          },
+        ],
         copyright: `Copyright © ${new Date().getFullYear()} Actual Experience plc. Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        magicComments: makeMagicComments({
+          highlight: 'theme-code-block-highlighted-line',
+          error: true,
+        }),
       },
     }),
 };

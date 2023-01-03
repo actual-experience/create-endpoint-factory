@@ -114,15 +114,18 @@ import { BookSchema } from '../../../src/schemas/books';
 
 export default createEndpoint({
   methods: (build) => ({
+    // error-next-line
     get: build.method<Book>({
       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
     }),
     patch: build.method({
+      // error-start
       validators: {
         body: schemaToInvariant(BookSchema.omit({ id: true }).partial()),
         query: (query): query is { id: string } => typeof query.id == 'string',
         response: alwaysMatch<void>(),
       },
+      // error-end
       handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
         if (!book) {
