@@ -86,8 +86,9 @@ const config = {
       navbar: {
         title: 'Create Endpoint Handler',
         logo: {
-          alt: 'My Site Logo',
+          alt: 'Actual Logo',
           src: 'img/logo.svg',
+          srcDark: 'img/logo-white.svg',
         },
         items: [
           {
