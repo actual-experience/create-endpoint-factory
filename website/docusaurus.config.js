@@ -92,12 +92,6 @@ const config = {
         },
         items: [
           {
-            type: 'doc',
-            docId: 'intro',
-            position: 'left',
-            label: 'Tutorial',
-          },
-          {
             href: `https://github.com/${organizationName}/${projectName}`,
             label: 'GitHub',
             position: 'right',

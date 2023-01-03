@@ -1,5 +1,5 @@
 {
-  "name": "@actual/next-create-endpoint-handler",
+  "name": "next-create-endpoint-handler",
   "version": "0.0.1",
   "description": "A utility for creating NextJS API route handlers by method",
   "files": [
