@@ -34,7 +34,8 @@ the background in custom CSS file due bug https://github.com/facebook/docusaurus
     opacity: 0.4;
   }
   :global(.theme-code-block-highlighted-line) & {
-    box-shadow: 2px 0 0 var(--docusaurus-highlighted-code-line-border);
+    box-shadow: var(--docusaurus-highlighted-code-line-border-width) 0 0
+      var(--docusaurus-highlighted-code-line-border);
     &::before {
       opacity: 0.8;
     }

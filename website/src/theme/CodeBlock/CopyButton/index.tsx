@@ -5,7 +5,15 @@ import type { WrapperProps } from '@docusaurus/types';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { useLigature } from '@site/src/hooks/useCodeLigatures';
 
+import styles from './styles.module.scss';
+import clsx from 'clsx';
+
 type Props = WrapperProps<typeof CopyButtonType>;
+
+/*
+  Swizzled (wrapped) to:
+  - add ligature toggle
+*/
 
 export default function CopyButtonWrapper(props: Props): JSX.Element {
   const isBrowser = useIsBrowser();
@@ -14,8 +22,7 @@ export default function CopyButtonWrapper(props: Props): JSX.Element {
     <>
       <CopyButton {...props} />
       <button
-        className="clean-btn"
-        style={{ whiteSpace: 'pre' }}
+        className={clsx('clean-btn', styles.ligatureBtn)}
         disabled={!isBrowser}
         onClick={() => setLigature(ligature === 'none' ? 'normal' : 'none')}
       >

@@ -4,6 +4,12 @@ import type { Props } from '@theme/CodeBlock/Line';
 
 import styles from './styles.module.scss';
 
+/*
+  Swizzled (ejected) to:
+  - add 'code-block-line-number' global class (used in theme mixin)
+  - add left border 
+*/
+
 export default function CodeBlockLine({
   line,
   classNames,

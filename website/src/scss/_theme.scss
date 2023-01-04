@@ -109,7 +109,10 @@ $contrast: (
         margin: 0 calc(-1 * var(--ifm-pre-padding));
         padding: 0 var(--ifm-pre-padding);
         .code-block-line-number {
-          box-shadow: 2px 0 0 var(--docusaurus-#{$name}-code-line-border);
+          box-shadow: var(--docusaurus-highlighted-code-line-border-width)
+            0
+            0
+            var(--docusaurus-#{$name}-code-line-border);
           &::before {
             @if (meta.type-of(map.get($highlight, number)) == color) {
               color: map.get($highlight, number);
