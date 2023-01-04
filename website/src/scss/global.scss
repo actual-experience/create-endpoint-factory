@@ -40,6 +40,8 @@ $themes: (
     info: #2998ff,
     warning: #f79128,
     danger: #ff4646,
+    background: util.tintOrShade(#270b56, 95%),
+    surface: util.tintOrShade(#270b56, 98%),
   ),
   dark: (
     primary: #01c3b8,

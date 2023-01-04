@@ -25,7 +25,6 @@ const createScript = (defaultLigatures) =>
   var storedLigature = getStoredLigature();
   if (storedLigature !== null) {
     setDataLigatureAttribute(storedLigature);
-    console.log(document.documentElement.getAttribute('data-ligatures'))
   } else {
     setDataLigatureAttribute(defaultLigatures === 'none' ? 'none' : 'normal');
   }
