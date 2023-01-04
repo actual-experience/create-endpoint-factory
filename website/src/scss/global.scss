@@ -110,6 +110,11 @@ $themes: (
           background: util.tintOrShade(map.get($github, red), 85%),
           number: map.get($github, red),
         ),
+        success: (
+          border: rgba(map.get($github, teal), 0.4),
+          background: util.tintOrShade(map.get($github, teal), 85%),
+          number: map.get($github, teal),
+        ),
       ),
     )
   );
@@ -133,12 +138,17 @@ html[data-theme='dark'] {
       highlights: (
         highlighted: (
           border: map.get($dracula, purple),
-          background: rgba(map.get($dracula, purple), 0.2),
+          background: rgba(map.get($dracula, purple), 0.15),
         ),
         error: (
           border: map.get($dracula, red),
-          background: rgba(map.get($dracula, red), 0.2),
+          background: rgba(map.get($dracula, red), 0.15),
           number: map.get($dracula, red),
+        ),
+        success: (
+          border: map.get($dracula, green),
+          background: rgba(map.get($dracula, green), 0.15),
+          number: map.get($dracula, green),
         ),
       ),
     )

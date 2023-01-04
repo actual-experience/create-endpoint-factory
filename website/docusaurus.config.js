@@ -132,6 +132,7 @@ const config = {
         magicComments: makeMagicComments({
           highlight: 'theme-code-block-highlighted-line',
           error: true,
+          success: true,
         }),
       },
     }),

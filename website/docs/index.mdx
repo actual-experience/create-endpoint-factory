@@ -67,6 +67,7 @@ export default createEndpoint({
   methods: (build) => ({
     // error-next-line
     get: build.method<{ books: Book[] }>({
+      // success-next-line
       handler: async () => ({
         books: await Book.findAll(),
       }),
@@ -108,6 +109,7 @@ export default createEndpoint({
         response: alwaysMatch<void>(),
       },
       // error-end
+      // success-start
       handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
         if (!book) {
@@ -116,6 +118,7 @@ export default createEndpoint({
         await book.update(req.body);
         // we don't return anything, so code is automatically 204
       },
+      // success-end
     }),
     delete: build.method<void>({
       handler: async (req, res, { failWithCode }) => {
