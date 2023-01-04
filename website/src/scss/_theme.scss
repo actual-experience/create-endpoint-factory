@@ -81,6 +81,12 @@ $contrast: (
       $dark: map.get($theme, dark)
     );
   }
+  @if (map.has-key(if($colors, $colors, ()), background)) {
+    --ifm-background-color: var(--ifm-color-background);
+  }
+  @if (map.has-key(if($colors, $colors, ()), surface)) {
+    --ifm-background-surface-color: var(--ifm-color-surface);
+  }
 
   $emphasis: map.get($theme, emphasis);
   @if ($emphasis) {
@@ -100,16 +106,32 @@ $contrast: (
     --docusaurus-#{$name}-code-line-bg: #{map.get($highlight, background)};
     @if $name != 'highlighted' {
       $selector: map.get($highlight, selector);
+
       #{if(
         $selector,
         $selector,
         '.code-block-#{$name}-line'
       )} {
+        // specificity shenanigans
+        :where(&) {
+          display: block;
+        }
         background-color: var(--docusaurus-#{$name}-code-line-bg);
+        box-shadow: inset
+          var(
+            --docusaurus-#{$name}-code-line-border-width,
+            var(--docusaurus-highlighted-code-line-border-width)
+          )
+          0
+          0
+          var(--docusaurus-#{$name}-code-line-border);
         margin: 0 calc(-1 * var(--ifm-pre-padding));
         padding: 0 var(--ifm-pre-padding);
         .code-block-line-number {
-          box-shadow: var(--docusaurus-highlighted-code-line-border-width)
+          box-shadow: var(
+              --docusaurus-#{$name}-code-line-border-width,
+              var(--docusaurus-highlighted-code-line-border-width)
+            )
             0
             0
             var(--docusaurus-#{$name}-code-line-border);

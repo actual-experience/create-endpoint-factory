@@ -22,6 +22,9 @@ export default function CopyButtonWrapper(props: Props): JSX.Element {
     <>
       <CopyButton {...props} />
       <button
+        type="button"
+        aria-label="Toggle ligatures"
+        title="Toggle ligatures"
         className={clsx('clean-btn', styles.ligatureBtn)}
         disabled={!isBrowser}
         onClick={() => setLigature(ligature === 'none' ? 'normal' : 'none')}
