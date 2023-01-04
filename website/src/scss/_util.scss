@@ -21,6 +21,10 @@
   @return color.mix(black, $color, $percentage);
 }
 
+@function tone($color, $percentage) {
+  @return color.mix(hsl(0, 0%, 50%), $color, $percentage);
+}
+
 /// Darken a color if percentage is negative, otherwise lighten it
 /// @access public
 /// @param {Color} $color - color to shade/tint

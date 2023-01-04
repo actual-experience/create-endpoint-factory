@@ -31,10 +31,8 @@ $contrast: (
   $custom-contrast: (),
   $dark: false
 ) {
-  $final-shades: map.deep-merge($shades, $custom-shades);
-  $final-contrast: map.deep-merge($contrast, $custom-contrast);
   --ifm-color-#{$name}: #{$color};
-  @each $shade, $colorOrPct in $final-shades {
+  @each $shade, $colorOrPct in map.deep-merge($shades, $custom-shades) {
     --ifm-color-#{$name}#{if($shade == '', '', '-')}#{$shade}: #{if(
         meta.type-of($colorOrPct) == color,
         $colorOrPct,
@@ -42,7 +40,11 @@ $contrast: (
       )};
   }
   @each $contrast,
-    $colorOrPct in map.get($final-contrast, if($dark, dark, light))
+    $colorOrPct
+      in map.get(
+        map.deep-merge($contrast, $custom-contrast),
+        if($dark, dark, light)
+      )
   {
     --ifm-color-#{$name}-contrast#{if($contrast == '', '', '-')}#{$contrast}: #{if(
         meta.type-of($colorOrPct) == color,

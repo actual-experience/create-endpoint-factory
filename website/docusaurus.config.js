@@ -24,7 +24,7 @@ const makeMagicComments = (classMap) =>
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Create Endpoint Handler',
+  title: 'Create Endpoint Factory',
   url: `https://${organizationName}.github.io`,
   baseUrl: `/${projectName}`,
   onBrokenLinks: 'throw',
@@ -99,7 +99,7 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: 'Create Endpoint Handler',
+        title: 'Create Endpoint Factory',
         logo: {
           alt: 'Actual Logo',
           src: 'img/logo.svg',

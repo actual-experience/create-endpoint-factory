@@ -49,7 +49,7 @@ export const BookSchema = z.object({
 }) satisfies ZodSchema<InferAttributes<Book>>;
 
 // file: src/logic/server/index.ts
-import { createEndpointFactory } from 'next-create-endpoint-handler';
+import { createEndpointFactory } from 'next-create-endpoint-factory';
 import { getAuthTokens } from './auth';
 
 export const createEndpoint = createEndpointFactory({
@@ -57,7 +57,7 @@ export const createEndpoint = createEndpointFactory({
 });
 
 // file: pages/api/books/index.ts
-import { alwaysMatch } from 'next-create-endpoint-handler';
+import { alwaysMatch } from 'next-create-endpoint-factory';
 import { createEndpoint } from '../../../src/logic/server';
 import { Book } from '../../../src/logic/server/books';
 import { schemaToInvariant } from '../../../src/schemas';
@@ -89,7 +89,7 @@ export default createEndpoint({
 }).handler;
 
 // file: pages/api/books/[id].ts
-import { alwaysMatch } from 'next-create-endpoint-handler';
+import { alwaysMatch } from 'next-create-endpoint-factory';
 import { createEndpoint } from '../../../src/logic/server';
 import { Book, getBookFromReq } from '../../../src/logic/server/books';
 import { schemaToInvariant } from '../../../src/schemas';
@@ -133,7 +133,7 @@ export default createEndpoint({
 }).handler;
 
 // file: pages/api/auth/token.ts
-import { alwaysMatch } from 'next-create-endpoint-handler';
+import { alwaysMatch } from 'next-create-endpoint-factory';
 import z from 'zod';
 import { createEndpoint } from '../../../src/logic/server';
 import { getTokenForBody } from '../../../src/logic/server/auth';
