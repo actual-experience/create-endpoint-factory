@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type { HttpMethod } from './constants';
+import { HttpMethod, httpMethods } from './constants';
 import { executeDefinition } from './execute';
 import type {
   CreateExtraApi,
@@ -212,6 +212,13 @@ export const createEndpointFactory = <
         : ''
     );
 
+    const supportedMethods = httpMethods.filter(
+      (method) =>
+        typeof methodDefinitions[
+          method.toLowerCase() as Lowercase<Exclude<typeof method, 'OPTIONS'>>
+        ] !== 'undefined'
+    );
+
     const defaultDefinition = buildDefault?.(builder);
     assert(
       typeof buildDefault === 'undefined' ||
@@ -252,8 +259,16 @@ export const createEndpointFactory = <
       }),
       handler: decorateHandler(async (req, res) => {
         const { method = '' } = req;
+
+        if (method === 'OPTIONS') {
+          res.setHeader('Allow', supportedMethods.join(','));
+          return res.status(204).end();
+        }
+
         const definition =
-          methodDefinitions[method.toLowerCase() as Lowercase<HttpMethod>];
+          methodDefinitions[
+            method.toLowerCase() as Lowercase<Exclude<HttpMethod, 'OPTIONS'>>
+          ];
         if (definition) {
           return executeDefinition(
             config,
@@ -271,12 +286,7 @@ export const createEndpointFactory = <
             res
           );
         } else {
-          res.setHeader(
-            'Allow',
-            Object.keys(methodDefinitions)
-              .map((method) => method.toUpperCase())
-              .join(',')
-          );
+          res.setHeader('Allow', supportedMethods.join(','));
           return res.status(405).end();
         }
       }, decorators),

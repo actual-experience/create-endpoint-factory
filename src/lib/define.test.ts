@@ -77,7 +77,7 @@ describe('createEndpointFactory', () => {
     });
   });
 
-  it('should return correct Allow header for unsupported methods', async () => {
+  it('should return correct Allow header for unsupported methods or an OPTIONS request', async () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
@@ -96,6 +96,12 @@ describe('createEndpointFactory', () => {
     await testApiHandler({
       handler: endpoint.handler,
       test: async ({ fetch }) => {
+        const optionsRes = (await fetch({
+          method: 'OPTIONS',
+        })) as unknown as Response;
+        expect(optionsRes.status).toBe(204);
+        expect(optionsRes.headers.get('Allow')).toBe('GET,PUT');
+
         const deleteRes = (await fetch({
           method: 'DELETE',
         })) as unknown as Response;
@@ -497,7 +503,7 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (build) => ({
         post: build.method<{ caught: 'uncaught' }>({
-          handler: (req, res) => ({
+          handler: () => ({
             caught: 'uncaught',
           }),
         }),

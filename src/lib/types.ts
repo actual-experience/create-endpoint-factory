@@ -231,7 +231,7 @@ export type MethodDefinitions<
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = Partial<
   Record<
-    Lowercase<HttpMethod>,
+    Lowercase<Exclude<HttpMethod, 'OPTIONS'>>,
     MethodDefinition<any, any, any, Authentication, ExtraApi>
   >
 >;

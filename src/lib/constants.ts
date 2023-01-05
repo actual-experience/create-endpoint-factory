@@ -29,7 +29,7 @@ export const isNothing = (val: unknown): val is Nothing => val === nothing;
 
 export type NothingToAny<T> = T extends Nothing ? any : T;
 
-const httpMethods = [
+export const httpMethods = [
   'GET',
   'HEAD',
   'POST',
