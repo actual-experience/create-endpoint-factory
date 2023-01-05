@@ -1,3 +1,12 @@
+import { NextApiHandler } from 'next';
+import { Decorator, GenericsFromDecorator } from '../types';
+
+export function assert(condition: boolean, error?: string | Error) {
+  if (!condition) {
+    throw error instanceof Error ? error : new Error(error);
+  }
+}
+
 export interface SerializedError {
   name?: string;
   message?: string;
@@ -66,3 +75,11 @@ export const wrapConstructor =
   (...args) =>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     new constructor(...args);
+
+export const decorateHandler = <Return, Decorators extends Decorator[]>(
+  handler: NextApiHandler<Return>,
+  decorators: Decorators
+): NextApiHandler<
+  Return | GenericsFromDecorator<Decorators[number]>['return']
+> =>
+  decorators.reduceRight((handler, decorator) => decorator(handler), handler);

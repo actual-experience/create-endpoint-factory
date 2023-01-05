@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
 import { nothing, ResError, createEndpointFactory } from '..';
-import type { GenericsFromHandler } from './types';
+import type { Decorator, GenericsFromHandler } from './types';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -477,4 +477,52 @@ describe('createEndpointFactory', () => {
       expect(fn).toThrow(...args);
     }
   );
+
+  it('should allow passing decorators, and applies from right to left', async () => {
+    const withFoo: Decorator<{ caught: 'foo' }> = (handler) => (req, res) => {
+      if (req.body === 'foo' || req.body === 'foobar') {
+        return res.json({ caught: 'foo' });
+      }
+      return handler(req, res);
+    };
+    const withBar: Decorator<{ caught: 'bar' }> = (handler) => (req, res) => {
+      if (req.body === 'bar' || req.body === 'foobar') {
+        return res.json({ caught: 'bar' });
+      }
+      return handler(req, res);
+    };
+
+    const createEndpoint = createEndpointFactory();
+
+    const endpoint = createEndpoint({
+      methods: (build) => ({
+        post: build.method<{ caught: 'uncaught' }>({
+          handler: (req, res) => ({
+            caught: 'uncaught',
+          }),
+        }),
+      }),
+      decorators: [withFoo, withBar],
+    });
+
+    await testApiHandler({
+      handler: endpoint.handler,
+      test: async ({ fetch }) => {
+        const fooRes = await fetch({ method: 'POST', body: 'foo' });
+        expect(await fooRes.json()).toEqual({ caught: 'foo' });
+
+        const barRes = await fetch({ method: 'POST', body: 'bar' });
+        expect(await barRes.json()).toEqual({ caught: 'bar' });
+
+        const foobarRes = await fetch({
+          method: 'POST',
+          body: 'foobar',
+        });
+        expect(await foobarRes.json()).toEqual({ caught: 'foo' }); // withFoo is before withBar
+
+        const uncaughtRes = await fetch({ method: 'POST', body: 'baz' });
+        expect(await uncaughtRes.json()).toEqual({ caught: 'uncaught' });
+      },
+    });
+  });
 });

@@ -1,10 +1,9 @@
-// this code should only ever be executed in node, so this **should** be fine to use
-import assert from 'assert/strict';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { HttpMethod } from './constants';
 import { executeDefinition } from './execute';
 import type {
   CreateExtraApi,
+  Decorator,
   EndpointConfig,
   EndpointDefinition,
   EndpointFactoryConfig,
@@ -12,7 +11,7 @@ import type {
   MethodDefinition,
   MethodDefinitions,
 } from './types';
-import type { SerializedError } from './utils';
+import { assert, decorateHandler, SerializedError } from './utils';
 import type { ConditionalBool, KeysMatching } from './utils/types';
 import { id } from './utils/types';
 
@@ -139,14 +138,16 @@ export const createEndpointFactory = <
           ExtraApi
         >
       | undefined = undefined,
-    DisableAuthentication extends boolean = false
+    DisableAuthentication extends boolean = false,
+    Decorators extends Decorator[] = []
   >(
     endpointConfig: EndpointConfig<
       Definitions,
       Default,
       DisableAuthentication,
       Authentication,
-      ExtraApi
+      ExtraApi,
+      Decorators
     >
   ) => {
     assert(
@@ -158,6 +159,7 @@ export const createEndpointFactory = <
       methods: buildMethods,
       default: buildDefault,
       disableAuthentication = false as DisableAuthentication,
+      decorators = [],
     } = endpointConfig;
 
     assert(
@@ -221,27 +223,33 @@ export const createEndpointFactory = <
         Object.entries(methodDefinitions).map(([key, definition]) => [
           key,
           definition &&
-            ((req: NextApiRequest, res: NextApiResponse) =>
-              executeDefinition(
-                config,
-                definition,
-                disableAuthentication,
-                req,
-                res
-              )),
+            decorateHandler(
+              (req: NextApiRequest, res: NextApiResponse) =>
+                executeDefinition(
+                  config,
+                  definition,
+                  disableAuthentication,
+                  req,
+                  res
+                ),
+              decorators
+            ),
         ])
       ),
       ...(defaultDefinition && {
-        default: (req: NextApiRequest, res: NextApiResponse) =>
-          executeDefinition(
-            config,
-            defaultDefinition,
-            disableAuthentication,
-            req,
-            res
-          ),
+        default: decorateHandler(
+          (req: NextApiRequest, res: NextApiResponse) =>
+            executeDefinition(
+              config,
+              defaultDefinition,
+              disableAuthentication,
+              req,
+              res
+            ),
+          decorators
+        ),
       }),
-      handler: async (req, res) => {
+      handler: decorateHandler(async (req, res) => {
         const { method = '' } = req;
         const definition =
           methodDefinitions[method.toLowerCase() as Lowercase<HttpMethod>];
@@ -270,7 +278,7 @@ export const createEndpointFactory = <
           );
           return res.status(405).end();
         }
-      },
-    } as EndpointDefinition<Definitions, Default, typeof config>;
+      }, decorators),
+    } as EndpointDefinition<Definitions, Default, Decorators, typeof config>;
   };
 };

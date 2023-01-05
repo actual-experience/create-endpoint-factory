@@ -16,6 +16,8 @@ import type {
   Validator,
 } from './utils/types';
 
+type ExcludeAny<T> = IsAny<T, never, T>;
+
 export interface CustomizedNextApiRequest<
   Body extends NextApiRequest['body'] = NextApiRequest['body'],
   Query = any
@@ -32,19 +34,27 @@ export interface CustomizedNextApiHandler<
   ReturnType = any,
   Body extends NextApiRequest['body'] = NextApiRequest['body'],
   Query extends NextApiRequest['query'] = NextApiRequest['query'],
-  SerializedErrorType = SerializedError
-> extends NextApiHandler<NothingToAny<ReturnType> | SerializedErrorType> {
+  SerializedErrorType = SerializedError,
+  DecoratorReturn = any
+> extends NextApiHandler<
+    NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
+  > {
   /**
    * "Fake" property to help with extracting types
-   * @internal
    */
   _body: Body;
   /**
    * "Fake" property to help with extracting types
-   * @internal
    */
   _query: Query;
 }
+
+export type Decorator<ReturnType = any> = (
+  handler: NextApiHandler<ReturnType>
+) => NextApiHandler<ReturnType>;
+
+export type GenericsFromDecorator<Deco extends Decorator> =
+  Deco extends Decorator<infer Return> ? { return: Return } : never;
 
 export interface MethodHandlerApi<
   ReturnType = any,
@@ -74,6 +84,7 @@ export interface MethodHandlerApi<
   failWithCode: WrappedConstructor<typeof ResError>;
   /**
    * Returned value from authentication function.
+   *
    * Undefined if authentication is disabled.
    */
   authentication: Authentication;
@@ -152,15 +163,23 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
       }
     : never;
 
-export type GenericsFromHandler<Handler extends CustomizedNextApiHandler> =
-  Handler extends CustomizedNextApiHandler<
-    infer Return,
-    infer Body,
-    infer Query,
-    infer Error
-  >
-    ? { return: Return; body: Body; query: Query; error: Error }
-    : never;
+export type GenericsFromHandler<
+  Handler extends CustomizedNextApiHandler<any, any, any, any, any>
+> = Handler extends CustomizedNextApiHandler<
+  infer Return,
+  infer Body,
+  infer Query,
+  infer Error,
+  infer DecoratorReturn
+>
+  ? {
+      return: Return;
+      body: Body;
+      query: Query;
+      error: Error;
+      decoratorReturn: DecoratorReturn;
+    }
+  : never;
 
 export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
   Config extends EndpointFactoryConfig<
@@ -196,13 +215,15 @@ export interface MethodBuilder<
 export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
   Config extends EndpointFactoryConfig,
+  DecorReturn = never,
   DefGenerics extends GenericsFromDefinition<Definition> = GenericsFromDefinition<Definition>,
   ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>
 > = CustomizedNextApiHandler<
   DefGenerics['return'],
   DefGenerics['body'],
   DefGenerics['query'],
-  ConfGenerics['error']
+  ConfGenerics['error'],
+  DecorReturn
 >;
 
 export type MethodDefinitions<
@@ -217,13 +238,14 @@ export type MethodDefinitions<
 
 export type MethodDefinitionsToHandlers<
   Definitions extends MethodDefinitions,
-  Config extends EndpointFactoryConfig
+  Config extends EndpointFactoryConfig,
+  DecoReturn = never
 > = {
   [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition
-    ? MethodDefinitionToHandler<Definitions[Method], Config>
+    ? MethodDefinitionToHandler<Definitions[Method], Config, DecoReturn>
     : [Definitions[Method]] extends [infer Def | undefined]
     ? Def extends MethodDefinition
-      ? MethodDefinitionToHandler<Def, Config> | undefined
+      ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
       : never
     : never;
 };
@@ -244,27 +266,32 @@ export type UnionGenerics<
 export type EndpointDefinition<
   Definitions extends MethodDefinitions,
   Default extends MethodDefinition | undefined,
+  Decorators extends Decorator[],
   Config extends EndpointFactoryConfig,
   UnionedGenerics extends UnionGenerics<Definitions, Default> = UnionGenerics<
     Definitions,
     Default
   >,
-  ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>
+  ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>,
+  DecoReturn = Decorators['length'] extends 0
+    ? any
+    : GenericsFromDecorator<Decorators[number]>['return']
 > = Id<
   {
     /** Individual handlers for each method. */
-    methods: MethodDefinitionsToHandlers<Definitions, Config>;
+    methods: MethodDefinitionsToHandlers<Definitions, Config, DecoReturn>;
     /** Combined handler, which will automatically choose the respective handler (or return 405 if none found) based on the method requested */
     handler: CustomizedNextApiHandler<
       UnionedGenerics['return'],
       UnionedGenerics['body'],
       UnionedGenerics['query'],
-      ConfGenerics['error']
+      ConfGenerics['error'],
+      DecoReturn
     >;
   } & (Default extends MethodDefinition
     ? {
         /** Catchall handler which will be used if the method doesn't have a specific handler */
-        default: MethodDefinitionToHandler<Default, Config>;
+        default: MethodDefinitionToHandler<Default, Config, DecoReturn>;
       }
     : // {} disappears in intersections, which we want here
       // eslint-disable-next-line @typescript-eslint/ban-types
@@ -333,7 +360,8 @@ export interface EndpointConfig<
     | undefined = undefined,
   DisableAuthentication extends boolean = false,
   Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
+  Decorators extends Decorator[] = []
 > {
   /**
    * Callback to define individual method handlers.
@@ -361,7 +389,14 @@ export interface EndpointConfig<
   ) => Default;
   /**
    * Disable authentication for this endpoint.
+   *
    * The `authenticate` function from createEndpoint will not be used, and `handlerApi.authentication` will be undefined.
    */
   disableAuthentication?: DisableAuthentication;
+  /**
+   * Decorators (functions which receive a handler and return a handler) to be applied to all final API handlers.
+   *
+   * Applied right to left, e.g. `[withFoo, withBar]` is equivalent to `withFoo(withBar(handler))`
+   */
+  decorators?: Decorators;
 }

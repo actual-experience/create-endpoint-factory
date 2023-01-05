@@ -1,3 +1,9 @@
+export type UnionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
 export type KeysMatching<T, V> = {
   [K in keyof T]-?: T[K] extends V ? K : never;
 }[keyof T];
