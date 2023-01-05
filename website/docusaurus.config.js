@@ -99,10 +99,11 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
+        style: 'dark',
         title: 'Create Endpoint Factory',
         logo: {
           alt: 'Actual Logo',
-          src: 'img/logo.svg',
+          src: 'img/logo-white.svg',
           srcDark: 'img/logo-white.svg',
         },
         items: [

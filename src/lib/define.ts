@@ -11,7 +11,8 @@ import type {
   MethodDefinition,
   MethodDefinitions,
 } from './types';
-import { assert, decorateHandler, SerializedError } from './utils';
+import type { SerializedError } from './utils';
+import { assert, decorateHandler } from './utils';
 import type { ConditionalBool, KeysMatching } from './utils/types';
 import { id } from './utils/types';
 
