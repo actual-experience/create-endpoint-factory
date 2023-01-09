@@ -12,11 +12,11 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        get: build.method<'foo', any, { foo: 'bar' }>({
+      methods: ({ method }) => ({
+        get: method<'foo', any, { foo: 'bar' }>({
           handler: () => Promise.resolve('foo'),
         }),
-        post: build.method<'bar', 'baz', { foo: 'bar' }>({
+        post: method<'bar', 'baz', { foo: 'bar' }>({
           handler: (req, res, { succeedWithCode, failWithCode }) => {
             if (!req.body) {
               throw new Error('No body provided');
@@ -81,12 +81,12 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        get: build.method({
+      methods: ({ method }) => ({
+        get: method({
           // eslint-disable-next-line @typescript-eslint/no-empty-function
           handler: () => {},
         }),
-        put: build.method({
+        put: method({
           // eslint-disable-next-line @typescript-eslint/no-empty-function
           handler: () => {},
         }),
@@ -133,8 +133,8 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        get: build.method<AuthStatus.Authorized>({
+      methods: ({ method }) => ({
+        get: method<AuthStatus.Authorized>({
           handler: (req, res, { authentication }) => {
             expect(authentication).toEqual({ auth: true });
             return AuthStatus.Authorized;
@@ -175,8 +175,8 @@ describe('createEndpointFactory', () => {
     });
 
     const endpointWithoutAuth = createEndpoint({
-      methods: (build) => ({
-        get: build.method<AuthStatus.Unauthenticated>({
+      methods: ({ method }) => ({
+        get: method<AuthStatus.Unauthenticated>({
           handler: (req, res, { authentication }) => {
             expect(authentication).toEqual(authentication);
             return AuthStatus.Unauthenticated;
@@ -205,8 +205,8 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        post: build.method({
+      methods: ({ method }) => ({
+        post: method({
           validators: {
             body: (body): body is 'foo' => body === 'foo',
             query: (query): query is { foo: 'bar' } => query.foo === 'bar',
@@ -275,8 +275,8 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        post: build.method<'hi'>({
+      methods: ({ method }) => ({
+        post: method<'hi'>({
           handler: (req, res, { failWithCode }) => {
             if (req.body === 'can retry') {
               throw new Error('try again');
@@ -319,12 +319,12 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        get: build.method<{ hasFoo: boolean }>({
+      methods: ({ method }) => ({
+        get: method<{ hasFoo: boolean }>({
           handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
           extraOptions: { includeFoo: true },
         }),
-        post: build.method<{ hasFoo: boolean }>({
+        post: method<{ hasFoo: boolean }>({
           handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
         }),
       }),
@@ -344,15 +344,15 @@ describe('createEndpointFactory', () => {
   it('should allow returning a specific symbol to indicate that the response has already been sent', async () => {
     await testApiHandler({
       handler: createEndpointFactory()({
-        methods: (build) => ({
-          get: build.method<typeof nothing>({
+        methods: ({ method }) => ({
+          get: method<typeof nothing>({
             handler: (req, res: NextApiResponse<'foo'>) => {
               res.status(205);
               res.json('foo');
               return nothing;
             },
           }),
-          post: build.method<typeof nothing>({
+          post: method<typeof nothing>({
             handler: async (req, res) => {
               res.status(205);
               await pipeline('foo', res);
@@ -380,12 +380,12 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
     const makeEndpoint = (includePatch = false) =>
       createEndpoint({
-        methods: (build) => ({
-          get: build.method<'foo'>({
+        methods: ({ method }) => ({
+          get: method<'foo'>({
             handler: () => 'foo',
           }),
           patch: includePatch
-            ? build.method<'bar'>({
+            ? method<'bar'>({
                 handler: () => 'bar',
               })
             : undefined,
@@ -456,12 +456,12 @@ describe('createEndpointFactory', () => {
     [
       () =>
         createEndpointFactory()({
-          methods: (build) => ({
+          methods: ({ method }) => ({
             // @ts-expect-error each method needs to be a definition or undefined
             get: false,
             // @ts-expect-error each method needs to be a definition or undefined
             put: true,
-            patch: build.method({ handler: () => '' }),
+            patch: method({ handler: () => '' }),
           }),
         }),
       'returned `methods` object must have definitions (or undefined) for each key, received { get: boolean, put: boolean }',
@@ -501,8 +501,8 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: (build) => ({
-        post: build.method<{ caught: 'uncaught' }>({
+      methods: ({ method }) => ({
+        post: method<{ caught: 'uncaught' }>({
           handler: () => ({
             caught: 'uncaught',
           }),

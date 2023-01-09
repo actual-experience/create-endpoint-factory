@@ -47,7 +47,7 @@ export const miniSerializeError = (value: unknown): SerializedError => {
  * This is necessary as generics cannot be partially inferred (so you couldn't provide the ReturnType as a generic while allowing body to be inferred)
  * @returns Type guard that always returns true, essentially asserting that the value is the given type
  * ```ts
- * build.method({
+ * method({
  *   validators: {
  *     body: (body): body is 'foo' => body === 'foo',
  *     response: alwaysMatch<'bar'>(),

@@ -64,15 +64,15 @@ import { schemaToInvariant } from '../../../src/schemas';
 import { BookSchema } from '../../../src/schemas/books';
 
 export default createEndpoint({
-  methods: (build) => ({
+  methods: ({ method }) => ({
     // error-next-line
-    get: build.method<{ books: Book[] }>({
+    get: method<{ books: Book[] }>({
       // success-next-line
       handler: async () => ({
         books: await Book.findAll(),
       }),
     }),
-    post: build.method({
+    post: method({
       // highlight-start
       validators: {
         body: schemaToInvariant(BookSchema.omit({ id: true })),
@@ -96,12 +96,12 @@ import { schemaToInvariant } from '../../../src/schemas';
 import { BookSchema } from '../../../src/schemas/books';
 
 export default createEndpoint({
-  methods: (build) => ({
+  methods: ({ method }) => ({
     // highlight-next-line
-    get: build.method<Book>({
+    get: method<Book>({
       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
     }),
-    patch: build.method({
+    patch: method({
       // error-start
       validators: {
         body: schemaToInvariant(BookSchema.omit({ id: true }).partial()),
@@ -120,7 +120,7 @@ export default createEndpoint({
       },
       // success-end
     }),
-    delete: build.method<void>({
+    delete: method<void>({
       handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
         if (!book) {
@@ -140,8 +140,8 @@ import { getTokenForBody } from '../../../src/logic/server/auth';
 import { schemaToInvariant } from '../../../src/schemas';
 
 export default createEndpoint({
-  methods: (build) => ({
-    post: build.method({
+  methods: ({ method }) => ({
+    post: method({
       validators: {
         body: schemaToInvariant(
           z.object({

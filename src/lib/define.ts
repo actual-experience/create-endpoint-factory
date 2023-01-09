@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { HttpMethod, httpMethods } from './constants';
+import type { HttpMethod } from './constants';
+import { httpMethods } from './constants';
 import { executeDefinition } from './execute';
 import type {
   CreateExtraApi,
@@ -32,11 +33,11 @@ import { id } from './utils/types';
  *
  * // api/books/
  * export default createEndpoint({
- *   methods: (build) => ({
- *     get: build.method<{ books: Book[] }>({
+ *   methods: ({ method }) =>({
+ *     get: method<{ books: Book[] }>({
  *       handler: async () => ({ books: await Book.findAll() }),
  *     }),
- *     post: build.method<{ id: EntityId }>({
+ *     post: method<{ id: EntityId }>({
  *       handler: async (req, res, { failWithCode, succeedWithCode }) => {
  *         const parseResult = BookSchema.safeParse(req.body);
  *         if (!parseResult.success) {
@@ -52,11 +53,11 @@ import { id } from './utils/types';
  *
  * // api/books/:id
  * export default createEndpoint({
- *   methods: (build) => ({
- *     get: build.method<Book>({
+ *   methods: ({ method }) =>({
+ *     get: method<Book>({
  *       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
  *     }),
- *     patch: build.method<void>({
+ *     patch: method<void>({
  *       handler: async (req, res, { failWithCode }) => {
  *         const book = await getBookFromReq(req);
  *         const parseResult = BookSchema.partial().safeParse(req.body);
@@ -67,7 +68,7 @@ import { id } from './utils/types';
  *         // we don't return anything, so code is automatically 204
  *       },
  *     }),
- *     delete: build.method<void>({
+ *     delete: method<void>({
  *       handler: async (req) => {
  *         const book = await getBookFromReq(req);
  *         await book.delete();
@@ -78,8 +79,8 @@ import { id } from './utils/types';
  *
  * // api/auth/token
  * export default createEndpoint({
- *   methods: (build) => ({
- *    post: build.method<{ token: string }>({
+ *   methods: ({ method }) =>({
+ *    post: method<{ token: string }>({
  *      handler: async (req, res, { failWithCode }) => {
  *        const parseResult = BodySchema.safeParse(req.body);
  *        if (!parseResult.success) {
