@@ -1,0 +1,12 @@
+button.ligatureBtn {
+  white-space: pre;
+  .ligatureIcon {
+    line-height: initial;
+    border: none;
+    background: none;
+    font-size: 100%;
+  }
+  &Selected {
+    color: var(--ifm-color-primary);
+  }
+}

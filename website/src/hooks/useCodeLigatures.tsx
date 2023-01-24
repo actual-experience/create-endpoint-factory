@@ -4,12 +4,13 @@ import React, { useMemo } from 'react';
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { createStorageSlot } from '@site/src/util/storageUtils';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { SetStateAction } from 'react';
 
 type ContextValue = {
   /** Current ligature setting */
   readonly ligature: Ligature;
   /** Set new ligature setting. */
-  readonly setLigature: (ligature: Ligature) => void;
+  readonly setLigature: (ligature: SetStateAction<Ligature>) => void;
 };
 
 const Context = createContext<ContextValue | undefined>(undefined);
@@ -44,13 +45,20 @@ const useContextValue = (): ContextValue => {
     getInitialLigature(coerceToLigature(`${customFields.defaultLigatures}`))
   );
   const setLigature = useCallback(
-    (newLigature: Ligature | null, options: { persist?: boolean } = {}) => {
+    (
+      newLigature: SetStateAction<Ligature> | null,
+      options: { persist?: boolean } = {}
+    ) => {
       const { persist = true } = options;
       if (newLigature) {
-        setLigatureState(newLigature);
-        if (persist) {
-          storeLigature(newLigature);
-        }
+        setLigatureState((curr) => {
+          const newLig =
+            typeof newLigature === 'function' ? newLigature(curr) : newLigature;
+          if (persist) {
+            storeLigature(newLig);
+          }
+          return newLig;
+        });
       } else {
         setLigatureState(Ligatutures.none);
         LigatureStorage.del();
