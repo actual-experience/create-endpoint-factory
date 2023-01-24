@@ -168,6 +168,11 @@ html[data-theme='dark'] {
   border-bottom: 1px solid var(--ifm-toc-border-color);
   &--dark {
     --ifm-navbar-background-color: #{map.get($themes, dark, background)};
+    [data-theme='light'] & .color-mode-toggle button {
+      &:hover {
+        background: var(--ifm-color-emphasis-800);
+      }
+    }
   }
 }
 

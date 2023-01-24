@@ -8,11 +8,77 @@ slug: /
 
 ## What is it?
 
-Create Endpoint Factory (CEF) is a library designed utility written to make the process of creating a NextJS API route handler quicker and more type-safe.
+Create Endpoint Factory (CEF) is a utility written to make the process of creating a NextJS API route handler quicker and more type-safe.
 
 It allows you to define a handler per HTTP method (`GET`, `POST`, etc.) and consolidates them into a final handler which will call the according method, or return a 405 response if the method is unsupported (unless a default handler is provided).
 
 It also provides some handy abstractions around returning data/catching errors.
+
+### Features
+
+- One time authentication setup (with the ability to disable for a given route)
+- Automatic handling of unsupported methods and OPTIONS requests, using methods provided
+- Automatic status code based on handler return
+  - If handler returns data, 200 is used, else 204 is used (and 500 is used for uncaught errors).
+  - `failWithCode` and `succeedWithCode` utilities provided for custom status.
+- Customisable serialisation of uncaught errors
+- Customisable derivation of extra data from request
+- Validation of body, query params and/or response
+
+```tsx
+// file: src/server/auth.ts noEmit
+export type Tokens = { tokens: true };
+export declare function getAuthTokens(headers: any): Tokens | undefined;
+
+// file: src/server/books.ts noEmit
+import type { NextApiRequest } from 'next';
+
+export type Book = {
+  id: string;
+  name: string;
+  author: string;
+};
+
+export declare function getBookFromReq(req: NextApiRequest): any;
+
+// file: src/server/index.ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import { getAuthTokens } from './auth';
+
+export const createEndpoint = createEndpointFactory({
+  authenticate: (req) => {
+    const tokens = getAuthTokens(req.headers);
+    if (!tokens) {
+      throw new Error('No tokens found');
+    }
+    return tokens;
+  },
+});
+
+// file: pages/api/books/[id].ts
+import { createEndpoint } from '../../../src/server';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
+
+export const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method<{ book: Book }>({
+      handler: async (req) => {
+        const book = getBookFromReq(req);
+        return { book };
+      },
+    }),
+    delete: method<void>({
+      handler: async (req) => {
+        const book = getBookFromReq(req);
+        await book.destroy();
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
 
 ## Why is it?
 
@@ -22,16 +88,12 @@ NextJS provides no “official” way to handle requests on a method basis, and 
 
 A NextJS handler for a REST endpoint (e.g. `api/book/:id`) could be implemented as below: (using Zod for schema validation and Sequelize for database interaction)
 
-<details>
-  <summary>test</summary>
-</details>
-
-```tsx title="Base NextJS example" collapsible collapsibleOpen
-// file: src/logic/server/auth.ts noEmit
+```tsx title="Base NextJS example" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
 
-// file: src/logic/server/books.ts noEmit
+// file: src/server/books.ts noEmit
 import type { NextApiRequest } from 'next';
 import {
   Model,
@@ -49,14 +111,15 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Book;
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
 
 // file: pages/api/book/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import z from 'zod';
-import type { Tokens } from '../../../src/logic/server/auth';
-import { getAuthTokens } from '../../../src/logic/server/auth';
-import { Book, getBookFromReq } from '../../../src/logic/server/books';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
 
 const UpdateRequestSchema = z.object({
   name: z.string().optional(),
@@ -65,7 +128,7 @@ const UpdateRequestSchema = z.object({
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ book: Book } | { edited: true } | { error: string }>
+  res: NextApiResponse<{ book: Book } | { edited: boolean } | { error: string }>
 ) {
   // highlight-start
   // authenticate
@@ -83,7 +146,7 @@ export default async function handler(
   // highlight-end
   // process the request
   try {
-    const book = getBookFromReq(req); // reusable util
+    const book = await getBookFromReq(req); // reusable util
     if (!book) {
       return res.status(404).json({ error: 'No book found' });
     }
@@ -134,12 +197,12 @@ As highlighted above, this has multiple pitfalls.
 
 The Typescript concerns can be somewhat alleviated by moving each method to its own mini handler, which then get called accordingly by a switch case:
 
-```ts title="Second attempt, with switch case and individual handlers" collapsible collapsibleOpen
-// file: src/logic/server/auth.ts noEmit
+```ts title="Second attempt, with switch case and individual handlers" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
 
-// file: src/logic/server/books.ts noEmit
+// file: src/server/books.ts noEmit
 import type { NextApiRequest } from 'next';
 import {
   Model,
@@ -157,14 +220,15 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Book;
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
 
 // file: pages/api/book/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import z from 'zod';
-import type { Tokens } from '../../../src/logic/server/auth';
-import { getAuthTokens } from '../../../src/logic/server/auth';
-import { Book, getBookFromReq } from '../../../src/logic/server/books';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
 
 const getHandler = (
   req: NextApiRequest,
@@ -174,7 +238,8 @@ const getHandler = (
 ) => {
   if (Math.random() > 0.5) {
     // success-start
-    // @ts-expect-error this will now error, yay!
+    // this will now error, yay!
+    // @ts-expect-error
     return res.status(200).json({ edited: true });
     // success-end
   }
@@ -188,7 +253,7 @@ const UpdateRequestSchema = z.object({
 
 const putHandler = async (
   req: NextApiRequest,
-  res: NextApiResponse<{ edited: true } | { error: string }>,
+  res: NextApiResponse<{ edited: boolean } | { error: string }>,
   tokens: Tokens,
   book: Book
 ) => {
@@ -232,7 +297,7 @@ export default async function handler(
   // highlight-end
   // process the request
   try {
-    const book = getBookFromReq(req); // reusable util
+    const book = await getBookFromReq(req); // reusable util
     if (!book) {
       return res.status(404).json({ error: 'No book found' });
     }
@@ -260,4 +325,126 @@ export default async function handler(
     // highlight-end
   }
 }
+```
+
+This resolves concerns around types, however there's still a lot of code to remember to include in each route. In fact, this approach requires _more_ code than the basic example above!
+
+We still need to include authentication, handle unsupported methods, and ensure uncaught errors match our desired error format.
+
+CEF allows us to address all of these, and more.
+
+```ts title="With Create Endpoint Factory" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
+export type Tokens = { tokens: true };
+export declare function getAuthTokens(headers: any): Tokens;
+
+// file: src/server/books.ts noEmit
+import type { NextApiRequest } from 'next';
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from 'sequelize';
+
+export class Book extends Model<
+  InferAttributes<Book>,
+  InferCreationAttributes<Book>
+> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+  declare author: string;
+}
+
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+
+// file: src/server/schema.ts
+import type { ZodSchema } from 'zod';
+
+/**
+ * Provided as an example recipe.
+ * CEF accepts type guards (return `true` if matches) or invariants (throw if doesn't match), but it can be useful to use a schema library such as Zod.
+ */
+export const schemaToInvariant = <T>(schema: ZodSchema<T>) =>
+  function invariant(input: unknown): asserts input is T {
+    schema.parse(input);
+  };
+
+// file: src/server/index.ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import { getAuthTokens } from './auth';
+
+export const createEndpoint = createEndpointFactory({
+  // success-start
+  // one time setup of authentication
+  // will apply to all endpoints made with `createEndpoint` except those with `disableAuthentication` set
+  authenticate: async (req) => {
+    const tokens = await getAuthTokens(req);
+    if (!tokens) {
+      throw new Error('No tokens found');
+    }
+    return tokens;
+  },
+  // success-end
+});
+
+// file: pages/api/book/[id].ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import z from 'zod';
+import { alwaysMatch } from 'next-create-endpoint-factory';
+import { createEndpoint } from '../../../src/server';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
+import { schemaToInvariant } from '../../../src/server/schema';
+
+const UpdateRequestSchema = z.object({
+  name: z.string().optional(),
+  author: z.string().optional(),
+});
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method<{ book: Book }>({
+      // @ts-expect-error
+      handler: async (req) => {
+        const book = await getBookFromReq(req);
+        if (Math.random() > 0.5) {
+          // success-start
+          // this still causes an error
+          return { edited: true };
+          // success-end
+        }
+        return { book };
+      },
+    }),
+    put: method({
+      // highlight-start
+      // types can be inferred from provided validators, instead of providing to generics
+      validators: {
+        body: schemaToInvariant(UpdateRequestSchema),
+        // `alwaysMatch` is a util provided for allowing inferrence from validators while providing a given type for the response
+        // runtime checks for the handler response may not be necessary if using typescript
+        response: alwaysMatch<{ edited: boolean }>(),
+        query: (query): query is { id: string } => typeof query.id === 'string',
+      },
+      // highlight-end
+      handler: async (req) => {
+        const book = await getBookFromReq(req);
+        await book.update(req.body); // body is now typed correctly since we've validated it
+        return { edited: true };
+      },
+    }),
+    delete: method<void>({
+      handler: async (req) => {
+        const book = await getBookFromReq(req);
+        await book.destroy();
+        // status code is automatically 204 since we didn't return
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
 ```
