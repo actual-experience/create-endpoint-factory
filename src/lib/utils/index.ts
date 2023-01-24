@@ -1,5 +1,5 @@
-import { NextApiHandler } from 'next';
-import { Decorator, GenericsFromDecorator } from '../types';
+import type { NextApiHandler } from 'next';
+import type { Decorator, GenericsFromDecorator } from '../types';
 
 export function assert(condition: boolean, error?: string | Error) {
   if (!condition) {
@@ -78,7 +78,7 @@ export const wrapConstructor =
 
 export const decorateHandler = <Return, Decorators extends Decorator[]>(
   handler: NextApiHandler<Return>,
-  decorators: Decorators
+  ...decorators: Decorators
 ): NextApiHandler<
   Return | GenericsFromDecorator<Decorators[number]>['return']
 > =>

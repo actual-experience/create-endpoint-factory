@@ -241,7 +241,7 @@ export const createEndpointFactory = <
                   req,
                   res
                 ),
-              decorators
+              ...decorators
             ),
         ])
       ),
@@ -255,7 +255,7 @@ export const createEndpointFactory = <
               req,
               res
             ),
-          decorators
+          ...decorators
         ),
       }),
       handler: decorateHandler(async (req, res) => {
@@ -290,7 +290,7 @@ export const createEndpointFactory = <
           res.setHeader('Allow', supportedMethods.join(','));
           return res.status(405).end();
         }
-      }, decorators),
+      }, ...decorators),
     } as EndpointDefinition<Definitions, Default, Decorators, typeof config>;
   };
 };
