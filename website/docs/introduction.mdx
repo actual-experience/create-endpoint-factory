@@ -39,7 +39,7 @@ export type Book = {
   author: string;
 };
 
-export declare function getBookFromReq(req: NextApiRequest): any;
+export declare function getBookFromReq(req: NextApiRequest): Promise<any>;
 
 // file: src/server/index.ts
 import { createEndpointFactory } from 'next-create-endpoint-factory';
@@ -64,13 +64,13 @@ export const endpoint = createEndpoint({
   methods: ({ method }) => ({
     get: method<{ book: Book }>({
       handler: async (req) => {
-        const book = getBookFromReq(req);
+        const book = await getBookFromReq(req);
         return { book };
       },
     }),
     delete: method<void>({
       handler: async (req) => {
-        const book = getBookFromReq(req);
+        const book = await getBookFromReq(req);
         await book.destroy();
       },
     }),
