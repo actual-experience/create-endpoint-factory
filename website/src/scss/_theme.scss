@@ -148,3 +148,17 @@ $contrast: (
     }
   }
 }
+
+$mobile-breakpoint: 996px;
+
+@mixin on-mobile {
+  @media screen and (max-width: $mobile-breakpoint) {
+    @content;
+  }
+}
+
+@mixin not-mobile {
+  @media screen and (min-width: $mobile-breakpoint) {
+    @content;
+  }
+}
