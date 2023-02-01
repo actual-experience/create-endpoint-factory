@@ -13,6 +13,7 @@ import type {
   IsAny,
   MaybePromise,
   NoInfer,
+  Parser,
   Validator,
 } from './utils/types';
 
@@ -102,6 +103,27 @@ export type MethodDefinition<
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
   /**
+   * Receive the body/query/response and return a validated version of it. Expected to throw errors if invalid type.
+   * If a standard error is thrown, 500 code will be used.
+   * Each parser receives `failWithCode` as its second argument, to allow for throwing errors with other HTTP codes.
+   *
+   * Original request object is passed as third argument.
+   *
+   * **Will be run *before* validators**
+   */
+  parsers?: {
+    body?: Parser<
+      Body,
+      unknown,
+      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
+    >;
+    query?: Parser<
+      Query,
+      NextApiRequest['query'],
+      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
+    >;
+  };
+  /**
    * Validate the body/query/response is the correct type, either with a type guard (return true if match, false if not) or an invariant (throw if not match).
    * If a validator returns false, an error will be thrown (code 400 for body/query, 500 for response).
    * If a standard error is thrown by a validator, 500 code will be used.
@@ -164,7 +186,7 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
     : never;
 
 export type GenericsFromHandler<
-  Handler extends CustomizedNextApiHandler<any, any, any, any, any>
+  Handler extends CustomizedNextApiHandler<any, any, any, any>
 > = Handler extends CustomizedNextApiHandler<
   infer Return,
   infer Body,

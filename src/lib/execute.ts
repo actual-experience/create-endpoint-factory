@@ -13,7 +13,7 @@ import type {
   MethodHandlerApi,
 } from './types';
 import type { SerializedError } from './utils';
-import { miniSerializeError } from './utils';
+import { safeAssign, miniSerializeError } from './utils';
 import type { ConditionalBool, Validator } from './utils/types';
 
 const validate = <T, Input = any>(
@@ -62,6 +62,7 @@ export const executeDefinition = async <
     extraApi,
   }: EndpointFactoryConfig<SerializedErrorType, Authentication, ExtraApi>,
   {
+    parsers,
     validators,
     handler,
     extraOptions,
@@ -94,6 +95,11 @@ export const executeDefinition = async <
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
     };
+    safeAssign(req, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
+      query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
+    });
     validate(validators?.body, req.body, [400, 'Invalid body']);
     validate(validators?.query, req.query, [400, 'Invalid query']);
     const response = await handler(req, res, api);

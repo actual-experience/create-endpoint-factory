@@ -83,3 +83,10 @@ export const decorateHandler = <Return, Decorators extends Decorator[]>(
   Return | GenericsFromDecorator<Decorators[number]>['return']
 > =>
   decorators.reduceRight((handler, decorator) => decorator(handler), handler);
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export const safeAssign = <T extends {}>(
+  target: T,
+  ...sources: Array<Partial<T>>
+): // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+T => Object.assign(target, ...sources);

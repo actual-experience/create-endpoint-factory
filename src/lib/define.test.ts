@@ -4,6 +4,8 @@ import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
+import { id } from './utils/types';
+import { z } from 'zod';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -197,6 +199,94 @@ describe('createEndpointFactory', () => {
         expect(await unauthenticatedRes.json()).toBe(
           AuthStatus.Unauthenticated
         );
+      },
+    });
+  });
+
+  it('allows custom parsers for query/body', async () => {
+    const createEndpoint = createEndpointFactory();
+
+    const endpointWithValidation = createEndpoint({
+      methods: ({ method }) => ({
+        post: method({
+          parsers: {
+            body: (body, failWithCode): 'foo' => {
+              if (body !== 'foo') {
+                throw failWithCode(400, 'Invalid body');
+              }
+              return body;
+            },
+            query: (query, failWithCode): { foo: 'bar' } => {
+              const { foo } = query;
+              if (foo !== 'bar') {
+                throw failWithCode(400, 'Invalid query');
+              }
+              return { foo };
+            },
+          },
+          handler: () => 'hi',
+        }),
+      }),
+    });
+
+    let useCorrectParams = true;
+    await testApiHandler({
+      handler: endpointWithValidation.handler,
+      paramsPatcher: (params) => {
+        params.foo = useCorrectParams ? 'bar' : 'foo';
+      },
+      test: async ({ fetch }) => {
+        useCorrectParams = false;
+        const invalidQueryRes = await fetch({ method: 'POST', body: 'foo' });
+        expect(invalidQueryRes.status).toBe(400);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        expect((await invalidQueryRes.json()).message).toBe('Invalid query');
+        useCorrectParams = true;
+
+        const invalidBodyRes = await fetch({ method: 'POST', body: 'bar' });
+        expect(invalidBodyRes.status).toBe(400);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        expect((await invalidBodyRes.json()).message).toBe('Invalid body');
+      },
+    });
+
+    const endpointWithTransforms = createEndpoint({
+      methods: ({ method }) => ({
+        post: method({
+          parsers: {
+            body: (body) =>
+              z.coerce
+                .number()
+                .transform((n) => n * 2)
+                .parse(body),
+            query: (query): { num: `${number}` } => {
+              const { num = '' } = query;
+              return { num: `${parseInt(num.toString()) * 2}` };
+            },
+          },
+          handler: (req) => ({
+            body: req.body,
+            query: req.query,
+          }),
+        }),
+      }),
+    });
+
+    await testApiHandler({
+      handler: endpointWithTransforms.handler,
+      params: id<
+        GenericsFromHandler<typeof endpointWithTransforms.handler>['query']
+      >({
+        num: '2',
+      }),
+      test: async ({ fetch }) => {
+        const res = await fetch({ method: 'POST', body: 3 });
+        expect(await res.json()).toStrictEqual({
+          body: 6,
+          query: {
+            num: '4',
+          },
+        });
       },
     });
   });
