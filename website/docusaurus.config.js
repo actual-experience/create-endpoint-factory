@@ -6,6 +6,7 @@ const { name, version } = require('../package.json');
 
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const loadLanguage = require('./plugins/load-language');
 const loadLigature = require('./plugins/load-ligature');
 
 const organizationName = 'actual-experience';
@@ -89,7 +90,7 @@ const config = {
     ],
   ],
 
-  plugins: ['docusaurus-plugin-sass', loadLigature],
+  plugins: ['docusaurus-plugin-sass', loadLigature, loadLanguage],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
