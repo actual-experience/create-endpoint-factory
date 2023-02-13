@@ -157,7 +157,9 @@ html[data-theme='dark'] {
 
 @each $language in (ts, js) {
   [data-language='#{$language}'] {
-    .#{if($language == 'ts', 'js', 'ts')}-only {
+    $opposite: if($language == 'ts', 'js', 'ts');
+    .#{$opposite}-only,
+    .code-block-#{$opposite}-only-line {
       display: none;
     }
   }

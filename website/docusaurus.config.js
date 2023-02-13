@@ -135,6 +135,8 @@ const config = {
           highlight: 'theme-code-block-highlighted-line',
           error: true,
           success: true,
+          'ts-only': true,
+          'js-only': true,
         }),
       },
     }),
