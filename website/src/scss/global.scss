@@ -226,3 +226,25 @@ html[data-theme='dark'] {
     background-repeat: no-repeat;
   }
 }
+
+table {
+  thead {
+    background-color: #53387e;
+    color: white;
+  }
+  tbody {
+    --ifm-table-stripe-background: #{rgba(#53387e, 0.07)};
+    color: #53387e;
+    background-color: white;
+  }
+  [data-theme='light'] & {
+    thead {
+      --ifm-table-border-color: var(--ifm-color-emphasis-700);
+    }
+  }
+  [data-theme='dark'] & {
+    tbody {
+      --ifm-table-border-color: var(--ifm-color-emphasis-700);
+    }
+  }
+}

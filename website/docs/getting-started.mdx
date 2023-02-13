@@ -1,11 +1,29 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
+slug: /
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Getting Started
+
+## Introduction
+
+Create Endpoint Factory (CEF) is a utility written to make the process of creating a NextJS API route handler quicker and more type-safe.
+
+It allows you to define a handler per HTTP method (`GET`, `POST`, etc.) and consolidates them into a final handler which will call the according method, or return a 405 response if the method is unsupported (unless a default handler is provided).
+
+It also provides some handy abstractions around returning data/catching errors.
+
+### Features
+
+- One time authentication setup (with the ability to disable for a given route)
+- Automatic handling of unsupported methods and `OPTIONS` requests, using methods provided
+- Automatic status code based on handler return
+- Customisable serialisation of uncaught errors
+- Customisable derivation of extra data from request
+- Validation of body, query params and/or response
 
 ## Installation
 
@@ -44,7 +62,11 @@ import { createEndpointFactory } from 'next-create-endpoint-factory';
 export const createEndpoint = createEndpointFactory();
 ```
 
-This function can optionally accept some configuration, which will be covered later.
+This function can optionally accept some configuration, which will be covered [later](#).
+
+<!---
+TODO: link to factory config docs once it exists
+-->
 
 Once this `createEndpoint` function is created, you can import it into your API route.
 
@@ -54,11 +76,25 @@ At its base level, an endpoint defines handlers for incoming method requests.
 
 These handlers may return data that should be sent as a response, and the final status will be set based on this.
 
-- If data is returned, the status is set to `200` and the data is sent via `res.json()`.
+| Handler result                 | Status | Final response                              |
+| :----------------------------- | -----: | :------------------------------------------ |
+| Data returned                  |  `200` | Data sent via `res.json()`                  |
+| No data returned (`undefined`) |  `204` | `res.end()` called                          |
+| Error thrown                   |  `500` | [Serialised error](#) sent via `res.json()` |
 
-- If no data is returned, the status is set to `204`, and `res.end()` is called.
+<!---
+TODO: link to error serialisation section once it exists
+-->
 
-- If an error is thrown, the status is set to `500`, and a serialised version of the error is sent via `res.json()`.
+The final combined handler will be attached to the [endpoint instance](#). In the vast majority of cases, you'll want to export this as default.
+
+<!---
+TODO: link to endpoint instance section once it exists
+-->
+
+The combined handler receives the request, and automatically calls the corresponding handler - if no handler is found for the method, a `405` is sent along with an `Allow` header set to a list of supported methods.
+
+This handler also automatically supports `OPTIONS` requests.
 
 ```ts title="pages/api/foo.ts"
 // file: src/api/index.ts noEmit
