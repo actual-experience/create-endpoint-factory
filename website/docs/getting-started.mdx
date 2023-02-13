@@ -1,0 +1,126 @@
+---
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Getting Started
+
+## Installation
+
+CEF is available as a package on NPM:
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npm install next-create-endpoint-factory
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add next-create-endpoint-factory
+```
+
+  </TabItem>
+</Tabs>
+
+## Setup
+
+The main export from CEF is the `createEndpointFactory` function, which is used to make the prepared `createEndpoint` utility used for each NextJS API route.
+
+:::note
+You're able to name this returned function anything you like - in this documentation we'll be using `createEndpoint`.
+
+The framework also doesn't mind where you export this function from, as long as you're happy importing it into your API routes.
+:::
+
+```ts no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+```
+
+This function can optionally accept some configuration, which will be covered later.
+
+Once this `createEndpoint` function is created, you can import it into your API route.
+
+## Endpoints
+
+At its base level, an endpoint defines handlers for incoming method requests.
+
+These handlers may return data that should be sent as a response, and the final status will be set based on this.
+
+- If data is returned, the status is set to `200` and the data is sent via `res.json()`.
+
+- If no data is returned, the status is set to `204`, and `res.end()` is called.
+
+- If an error is thrown, the status is set to `500`, and a serialised version of the error is sent via `res.json()`.
+
+```ts
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method<string>({
+      handler: () => {
+        return 'foo';
+      },
+    }),
+    post: method<void>({
+      handler: (req, res) => {
+        console.log(req.body);
+        if (!req.body) {
+          throw new Error('no body');
+        }
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+:::tip
+In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
+
+```ts
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    post: method<{ created: true }>({
+      handler: (req, res, { failWithCode, succeedWithCode }) => {
+        console.log(req.body);
+        if (!req.body) {
+          throw failWithCode(400, 'No body provided');
+        }
+        return succeedWithCode(201, { created: true });
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+`failWithCode` can be returned or thrown, but it's generally better to throw it yourself.
+
+:::

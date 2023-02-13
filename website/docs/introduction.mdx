@@ -17,10 +17,8 @@ It also provides some handy abstractions around returning data/catching errors.
 ### Features
 
 - One time authentication setup (with the ability to disable for a given route)
-- Automatic handling of unsupported methods and OPTIONS requests, using methods provided
+- Automatic handling of unsupported methods and `OPTIONS` requests, using methods provided
 - Automatic status code based on handler return
-  - If handler returns data, 200 is used, else 204 is used (and 500 is used for uncaught errors).
-  - `failWithCode` and `succeedWithCode` utilities provided for custom status.
 - Customisable serialisation of uncaught errors
 - Customisable derivation of extra data from request
 - Validation of body, query params and/or response

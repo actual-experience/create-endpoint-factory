@@ -2,10 +2,10 @@ import stream from 'stream';
 import { promisify } from 'util';
 import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
+import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
 import { id } from './utils/types';
-import { z } from 'zod';
 
 const pipeline = promisify(stream.pipeline);
 

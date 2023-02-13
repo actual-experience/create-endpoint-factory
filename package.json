@@ -14,7 +14,8 @@
     "type": "tsc --noEmit --emitDeclarationOnly false",
     "prettier": "prettier",
     "format": "prettier --write \"src/**/*.ts\"",
-    "lint": "eslint"
+    "lint": "eslint",
+    "website": "npm run --prefix website start"
   },
   "repository": {
     "type": "git",
