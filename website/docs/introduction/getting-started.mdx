@@ -60,7 +60,7 @@ These handlers may return data that should be sent as a response, and the final 
 
 - If an error is thrown, the status is set to `500`, and a serialised version of the error is sent via `res.json()`.
 
-```ts
+```ts title="pages/api/foo.ts"
 // file: src/api/index.ts noEmit
 import { createEndpointFactory } from 'next-create-endpoint-factory';
 
@@ -94,7 +94,7 @@ export default endpoint.handler;
 :::tip
 In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
 
-```ts
+```ts title="pages/api/foo.ts"
 // file: src/api/index.ts noEmit
 import { createEndpointFactory } from 'next-create-endpoint-factory';
 
