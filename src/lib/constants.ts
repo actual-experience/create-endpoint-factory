@@ -87,6 +87,8 @@ export class ResError extends Error {
 
 export const failWithCode = wrapConstructor(ResError);
 
+export type FailWithCode = typeof failWithCode;
+
 /**
  * Used to return a success response with a given code.
  *
