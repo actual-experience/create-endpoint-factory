@@ -229,6 +229,11 @@ html[data-theme='dark'] {
 
 $table-header-color: #53387e;
 table {
+  width: max-content;
+  border-radius: var(--ifm-global-radius);
+  box-shadow: var(--ifm-global-shadow-lw);
+  border-collapse: separate;
+  border-spacing: 0;
   --ifm-table-border-color: #{$table-header-color};
   thead {
     background-color: $table-header-color;
@@ -236,10 +241,19 @@ table {
   }
   tbody {
     [data-theme='light'] & {
+      --ifm-table-stripe-background: #{rgba($table-header-color, 0.1)};
       --ifm-table-border-color: var(--ifm-color-emphasis-300);
     }
-    --ifm-table-stripe-background: #{rgba($table-header-color, 0.07)};
+    [data-theme='dark'] & {
+      --ifm-table-stripe-background: #{rgba($table-header-color, 0.2)};
+    }
     color: var(--ifm-color-emphasis-900);
     background-color: var(--ifm-color-surface);
+  }
+  &:not(.bordered) {
+    th,
+    td {
+      border-width: 0;
+    }
   }
 }
