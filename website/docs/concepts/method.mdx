@@ -1,0 +1,63 @@
+---
+sidebar_position: 3
+description: A description of a method for an API route.
+---
+
+# Method
+
+## Configuration
+
+### Handler
+
+import HandleTable from '../_handle-table.mdx';
+
+<HandleTable />
+
+#### Custom codes
+
+In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
+
+```ts title="pages/api/foo.ts"
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    post: method<{ created: true }>({
+      handler: (req, res, { failWithCode, succeedWithCode }) => {
+        console.log(req.body);
+        if (!req.body) {
+          throw failWithCode(400, 'No body provided');
+        }
+        return succeedWithCode(201, { created: true });
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+_`failWithCode` can be returned or thrown, but it's generally better to throw it yourself._
+
+#### Disabling default response handling
+
+### Parsing
+
+### Validation
+
+<div className="ts-only">
+  
+<h4>Type inference</h4>
+
+</div>
+
+### Extra options
+
+## Result

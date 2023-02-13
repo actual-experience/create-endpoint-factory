@@ -1,0 +1,49 @@
+---
+sidebar_position: 2
+description: A description of an individual API route.
+---
+
+# Endpoint
+
+## Configuration
+
+### Method handling
+
+### Default handler
+
+### Disabling authentication
+
+### Handler decoration
+
+:::warning
+Each decorator is expected to take one parameter, the handler. If the original wrapper needs extra parameters, for example configuration, then a secondary function would be necessary.
+
+```ts
+// file: src/api/index.ts noEmit
+import type { NextApiHandler } from 'next';
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+export const withFoo = (handler: NextApiHandler, config: { bar: boolean }) =>
+  handler;
+
+// file: pages/api/foo.ts
+import type { NextApiHandler } from 'next';
+import { createEndpoint, withFoo } from '../../src/api';
+
+export const endpoint = createEndpoint({
+  methods: () => ({}),
+  decorators: [(handler: NextApiHandler) => withFoo(handler, { bar: true })],
+});
+```
+
+:::
+
+## Result
+
+### Combined handler
+
+### Individual method handlers
+
+### Default handler

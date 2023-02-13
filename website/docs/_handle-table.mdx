@@ -1,0 +1,5 @@
+| Handler result                 | Status | Final response                                                                  |
+| :----------------------------- | -----: | :------------------------------------------------------------------------------ |
+| Data returned                  |  `200` | Data sent via `res.json()`                                                      |
+| No data returned (`undefined`) |  `204` | `res.end()` called                                                              |
+| Error thrown                   |  `500` | [Serialised error](/concepts/factory#error-serialisation) sent via `res.json()` |

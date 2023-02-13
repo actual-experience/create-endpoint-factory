@@ -46,6 +46,10 @@ yarn add next-create-endpoint-factory
   </TabItem>
 </Tabs>
 
+<!---
+TODO: publish to npm
+-->
+
 ## Setup
 
 The main export from CEF is the `createEndpointFactory` function, which is used to make the prepared `createEndpoint` utility used for each NextJS API route.
@@ -62,11 +66,7 @@ import { createEndpointFactory } from 'next-create-endpoint-factory';
 export const createEndpoint = createEndpointFactory();
 ```
 
-This function can optionally accept some configuration, which will be covered [later](#).
-
-<!---
-TODO: link to factory config docs once it exists
--->
+This function can optionally accept some configuration, covered in [concepts](concepts/factory#configuration).
 
 Once this `createEndpoint` function is created, you can import it into your API route.
 
@@ -76,21 +76,17 @@ At its base level, an endpoint defines handlers for incoming method requests.
 
 These handlers may return data that should be sent as a response, and the final status will be set based on this.
 
-| Handler result                 | Status | Final response                              |
-| :----------------------------- | -----: | :------------------------------------------ |
-| Data returned                  |  `200` | Data sent via `res.json()`                  |
-| No data returned (`undefined`) |  `204` | `res.end()` called                          |
-| Error thrown                   |  `500` | [Serialised error](#) sent via `res.json()` |
+import HandleTable from './_handle-table.mdx';
 
-<!---
-TODO: link to error serialisation section once it exists
--->
+<HandleTable />
 
-The final combined handler will be attached to the [endpoint instance](#). In the vast majority of cases, you'll want to export this as default.
+:::tip
 
-<!---
-TODO: link to endpoint instance section once it exists
--->
+See [custom codes](concepts/method#custom-codes) for how to use codes other than these defaults.
+
+:::
+
+The final combined handler will be attached to the [endpoint instance](/concepts/endpoint). In the vast majority of cases, you'll want to export this as default.
 
 The combined handler receives the request, and automatically calls the corresponding handler - if no handler is found for the method, a `405` is sent along with an `Allow` header set to a list of supported methods.
 
@@ -126,37 +122,3 @@ const endpoint = createEndpoint({
 
 export default endpoint.handler;
 ```
-
-:::tip
-In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
-
-```ts title="pages/api/foo.ts"
-// file: src/api/index.ts noEmit
-import { createEndpointFactory } from 'next-create-endpoint-factory';
-
-export const createEndpoint = createEndpointFactory();
-
-// file: pages/api/foo.ts
-
-import { createEndpoint } from '../../src/api';
-
-const endpoint = createEndpoint({
-  methods: ({ method }) => ({
-    post: method<{ created: true }>({
-      handler: (req, res, { failWithCode, succeedWithCode }) => {
-        console.log(req.body);
-        if (!req.body) {
-          throw failWithCode(400, 'No body provided');
-        }
-        return succeedWithCode(201, { created: true });
-      },
-    }),
-  }),
-});
-
-export default endpoint.handler;
-```
-
-`failWithCode` can be returned or thrown, but it's generally better to throw it yourself.
-
-:::

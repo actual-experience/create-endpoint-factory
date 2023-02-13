@@ -7,6 +7,6 @@ export type {
   Validator,
   Parser,
 } from './lib/utils/types';
-export { ResError, nothing, isNothing } from './lib/constants';
+export { ResError, nothing } from './lib/constants';
 export type { FailWithCode } from './lib/constants';
 export type { GenericsFromHandler, Decorator } from './lib/types';

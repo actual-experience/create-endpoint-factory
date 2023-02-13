@@ -227,24 +227,19 @@ html[data-theme='dark'] {
   }
 }
 
+$table-header-color: #53387e;
 table {
+  --ifm-table-border-color: #{$table-header-color};
   thead {
-    background-color: #53387e;
+    background-color: $table-header-color;
     color: white;
   }
   tbody {
-    --ifm-table-stripe-background: #{rgba(#53387e, 0.07)};
-    color: #53387e;
-    background-color: white;
-  }
-  [data-theme='light'] & {
-    thead {
-      --ifm-table-border-color: var(--ifm-color-emphasis-700);
+    [data-theme='light'] & {
+      --ifm-table-border-color: var(--ifm-color-emphasis-300);
     }
-  }
-  [data-theme='dark'] & {
-    tbody {
-      --ifm-table-border-color: var(--ifm-color-emphasis-700);
-    }
+    --ifm-table-stripe-background: #{rgba($table-header-color, 0.07)};
+    color: var(--ifm-color-emphasis-900);
+    background-color: var(--ifm-color-surface);
   }
 }
