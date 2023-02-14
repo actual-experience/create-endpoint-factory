@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 description: The function used to create endpoints.
+toc_max_heading_level: 4
 ---
 
 # Factory
@@ -19,7 +20,103 @@ The factory can be configured for settings that should apply to all endpoints cr
 
 ### Error serialisation
 
-By default,
+By default, thrown (uncaught) errors will be serialised using [`miniSerializeError`](/exports#miniserializeerror), before being sent via `res.json()`.
+
+However, you may want to customise the serialisation of errors before they're sent. This is possible using the `serializeError` option when calling `createEndpointFactory`, and will affect all endpoints created with the factory returned.
+
+```ts no-transpile
+import {
+  createEndpointFactory,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
+
+export class MyCustomError extends Error {
+  isCustom = true;
+}
+
+const createEndpoint = createEndpointFactory({
+  serializeError: (err) => {
+    if (err instanceof MyCustomError) {
+      return { customError: true, ...miniSerializeError(err) };
+    }
+    return miniSerializeError(err);
+  },
+});
+```
+
+#### Errors with HTTP codes
+
+Errors thrown with `failWithCode` will be instances of the [`ResError`](/exports#reserror) subclass, which is exported from CEF.
+
+`ResError` (and by extension, `failWithCode`) accepts a third parameter, `meta`, which is exposed as a public field. This can be used in a custom serialisation function<span className="ts-only">, though will always be typed as `unknown`</span>.
+
+```ts
+import { ResError, miniSerializeError } from 'next-create-endpoint-factory';
+
+const isToastable = (
+  meta: unknown
+): meta is { isToastable: true; toastMsg: string } =>
+  typeof meta === 'object' && !!meta && 'isToastable' in meta;
+
+const serializeError = (err: unknown) => {
+  if (err instanceof ResError) {
+    return {
+      ...miniSerializeError(err),
+      ...(isToastable(err.meta) && {
+        isToastable: true,
+        toastMsg: err.meta.toastMsg,
+      }),
+    };
+  }
+  return miniSerializeError(err);
+};
+
+// can now call `failWithCode(code, message, { isToastable: true, toastMsg: 'Toast this!' })`
+```
+
+Alternatively, you can create your own subclass of ResError.
+
+```ts title="Custom error example" collapsible
+import {
+  createEndpointFactory,
+  ResError,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
+
+class ToastableError extends ResError {
+  isToastable = true;
+  constructor(code: number, errorMsg: string, public toastMsg: string) {
+    super(code, errorMsg);
+  }
+}
+
+const createEndpoint = createEndpointFactory({
+  serializeError: (err) => {
+    if (err instanceof ToastableError) {
+      return {
+        ...miniSerializeError(err),
+        toastMsg: err.toastMsg,
+        isToastable: true,
+      };
+    }
+    return miniSerializeError(err);
+  },
+});
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method({
+      handler: () => {
+        throw new ToastableError(
+          404,
+          'this message is internal',
+          'This message is toastable!'
+        );
+      },
+    }),
+  }),
+});
+```
 
 ### Authentication
 
