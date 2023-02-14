@@ -11,7 +11,7 @@ An endpoint factory is the pre-configured function used to create each [endpoint
 ```ts no-transpile
 import { createEndpointFactory } from 'next-create-endpoint-factory';
 
-const createEndpoint = createEndpointFactory();
+export const createEndpoint = createEndpointFactory();
 ```
 
 ## Configuration
@@ -34,7 +34,7 @@ export class MyCustomError extends Error {
   isCustom = true;
 }
 
-const createEndpoint = createEndpointFactory({
+export const createEndpoint = createEndpointFactory({
   serializeError: (err) => {
     if (err instanceof MyCustomError) {
       return { customError: true, ...miniSerializeError(err) };
@@ -51,27 +51,44 @@ Errors thrown with `failWithCode` will be instances of the [`ResError`](/exports
 `ResError` (and by extension, `failWithCode`) accepts a third parameter, `meta`, which is exposed as a public field. This can be used in a custom serialisation function<span className="ts-only">, though will always be typed as `unknown`</span>.
 
 ```ts
-import { ResError, miniSerializeError } from 'next-create-endpoint-factory';
+import {
+  createEndpointFactory,
+  ResError,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
 
 const isToastable = (
   meta: unknown
 ): meta is { isToastable: true; toastMsg: string } =>
   typeof meta === 'object' && !!meta && 'isToastable' in meta;
 
-const serializeError = (err: unknown) => {
-  if (err instanceof ResError) {
-    return {
-      ...miniSerializeError(err),
-      ...(isToastable(err.meta) && {
-        isToastable: true,
-        toastMsg: err.meta.toastMsg,
-      }),
-    };
-  }
-  return miniSerializeError(err);
-};
+export const createEndpoint = createEndpointFactory({
+  serializeError: (err: unknown) => {
+    if (err instanceof ResError) {
+      return {
+        ...miniSerializeError(err),
+        ...(isToastable(err.meta) && {
+          isToastable: true,
+          toastMsg: err.meta.toastMsg,
+        }),
+      };
+    }
+    return miniSerializeError(err);
+  },
+});
 
-// can now call `failWithCode(code, message, { isToastable: true, toastMsg: 'Toast this!' })`
+export const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method({
+      handler: (req, res, { failWithCode }) => {
+        throw failWithCode(404, 'this message is internal', {
+          isToastable: true,
+          toastMsg: 'This message is toastable!',
+        });
+      },
+    }),
+  }),
+});
 ```
 
 Alternatively, you can create your own subclass of ResError.
@@ -83,14 +100,14 @@ import {
   miniSerializeError,
 } from 'next-create-endpoint-factory';
 
-class ToastableError extends ResError {
+export class ToastableError extends ResError {
   isToastable = true;
   constructor(code: number, errorMsg: string, public toastMsg: string) {
     super(code, errorMsg);
   }
 }
 
-const createEndpoint = createEndpointFactory({
+export const createEndpoint = createEndpointFactory({
   serializeError: (err) => {
     if (err instanceof ToastableError) {
       return {
@@ -103,7 +120,7 @@ const createEndpoint = createEndpointFactory({
   },
 });
 
-const endpoint = createEndpoint({
+export const endpoint = createEndpoint({
   methods: ({ method }) => ({
     get: method({
       handler: () => {
@@ -121,5 +138,100 @@ const endpoint = createEndpoint({
 ### Authentication
 
 ### Extra information
+
+Sometimes it's desired to have additional information available to each handler, that might be derived from the original request. This is possible using the `extraApi` option when calling `createEndpointFactory`.
+
+You can provide a callback that receives the current request (and optionally some [configuration](#configuration-per-handler)) and returns a value that will be made available as `extra` in the `handlerApi` object.
+
+```ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithExtra = createEndpointFactory({
+  extraApi: (req) => {
+    const extra: { square?: number } = {};
+    if (typeof req.query.num === 'string') {
+      const num = parseInt(req.query.num);
+      extra.square = num ** 2;
+    }
+    return extra;
+  },
+});
+
+export const endpoint = createEndpointWithExtra({
+  methods: ({ method }) => ({
+    get: method({
+      handler: (req, res, { extra }) => {
+        console.log(extra.square); // number or undefined
+      },
+    }),
+  }),
+});
+```
+
+:::tip
+You don't have to be deriving anything from the request - you may just want to do some dependency injection, similar to a [thunk middleware with an extra argument](https://redux.js.org/usage/writing-logic-thunks#injecting-config-values-into-thunks).
+
+```ts title="Injecting a Sequelize instance" no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import { sequelize } from './sequelize';
+
+export const createEndpointWithSequelize = createEndpointFactory({
+  // highlight-next-line
+  extraApi: () => ({ sequelize }), // sequelize instance now available as extra.sequelize
+});
+```
+
+:::
+
+#### Configuration per handler
+
+It may be useful to provide options to your `extraApi` callback to affect what the final `extra` value will include. This is possible by setting an `extraOptions` option when creating a `method` definition.
+
+The options will be passed as the second argument to the `extraApi` callback.
+
+```ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithExtra = createEndpointFactory({
+  extraApi: (
+    req,
+    // highlight-next-line
+    { includeSquare = true }: { includeSquare?: boolean } = {}
+  ) => {
+    const extra: { square?: number } = {};
+    if (includeSquare && typeof req.query.num === 'string') {
+      const num = parseInt(req.query.num);
+      extra.square = num ** 2;
+    }
+    return extra;
+  },
+});
+
+export const endpoint = createEndpointWithExtra({
+  methods: ({ method }) => ({
+    get: method({
+      handler: (req, res, { extra }) => {
+        console.log(extra.square); // number or undefined
+      },
+      // highlight-next-line
+      extraOptions: { includeSquare: true },
+    }),
+  }),
+});
+```
+
+<div className="ts-only">
+
+:::info
+`extraOptions` is optional if the `extraApi` callback's second parameter is optional/potentially undefined.
+:::
+
+:::warning
+There's no way to change `extra`'s type dynamically - if a property is optionally included, it will still be marked as potentially undefined even if the options guarantees it exists.
+
+It's up to you whether to handle this with a standard null check or with type assertions.
+:::
+
+</div>
 
 ## Result
