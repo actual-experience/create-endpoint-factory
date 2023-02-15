@@ -5,15 +5,106 @@ description: A description of an individual API route.
 
 # Endpoint
 
+An endpoint instance describes an individual API route, and its handling of requests by HTTP method.
+
+It is returned from calling a [factory](./factory) (called `createEndpoint` in this documentation).
+
+```ts no-transpile
+export const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method({
+      handler: () => 'foo',
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
 ## Configuration
+
+The endpoint can be configured to affect the final behaviour of the route handler.
 
 ### Method handling
 
+The main way of defining an endpoint's behaviour is by creating [method](./method) definitions. This is created with a callback receiving a builder object, and returning an object with each definition under its corresponding method.
+
+```ts no-transpile
+export const endpoint = createEndpoint({
+  // highlight-start
+  methods: ({ method }) => ({
+    get: method({
+      handler: () => 'foo',
+    }),
+  }),
+  // highlight-end
+});
+```
+
 ### Default handler
+
+By default, an endpoint will respond to an unrecognised method request by setting the `Allow` header to a list of supported methods, and setting the status to `405`.
+
+If you wish to replace this behaviour, you can provide a `default` handler:
+
+```ts no-transpile
+export const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method({
+      handler: () => 'foo',
+    }),
+  }),
+  // highlight-start
+  default: ({ method }) =>
+    method({
+      handler: (req, res, { failWithCode }) => {
+        res.setHeader('Allow', 'GET');
+        throw new failWithCode(405, 'Unrecognised method');
+      },
+    }),
+  // highlight-end
+});
+```
 
 ### Handler decoration
 
-:::warning
+<!-- TODO: Decorator -> Enhancer? -->
+
+It's a fairly common pattern to create a function that receives a NextJS handler and returns a new handler wrapping it. CEF supports this via decorators.
+
+```ts no-transpile
+import type { NextApiHandler } from 'next';
+import { createEndpoint, withAuth, withFoo } from '../../src/api';
+
+export const endpoint = createEndpoint({
+  methods: () => ({}),
+  decorators: [withFoo, withAuth],
+});
+
+export default endpoint.handler;
+```
+
+:::info
+Decorators will be called from right to left, meaning that `withAuth` will receive the original handler, and `withFoo` will receive the handler that `withAuth` returns.
+
+This means that the above is equivalent to:
+
+```ts no-transpile
+import type { NextApiHandler } from 'next';
+import { createEndpoint, withAuth, withFoo } from '../../src/api';
+
+export const endpoint = createEndpoint({
+  methods: () => ({}),
+});
+
+export default withFoo(withAuth(endpoint.handler));
+```
+
+_However, this approach doesn't decorate the included [individual method handlers](#individual-method-handlers), only the [combined handler](#combined-handler)._
+
+:::
+
+:::caution
 Each decorator is expected to take one parameter, the handler. If the original wrapper needs extra parameters, for example configuration, then a secondary function would be necessary.
 
 ```ts
@@ -38,7 +129,7 @@ export const endpoint = createEndpoint({
 
 :::
 
-## Result
+## Instance
 
 ### Combined handler
 

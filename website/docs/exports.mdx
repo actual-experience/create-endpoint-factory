@@ -133,6 +133,6 @@ const withFoo: Decorator<{ foo: true }> = (handler) => (req, res) => {
 };
 ```
 
-:::warning
+:::caution
 To avoid pollution of the type, decorators which use a return type of `any` will not be reflected in the final return type.
 :::
