@@ -122,6 +122,15 @@ export type MethodDefinition<
       NextApiRequest['query'],
       [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
     >;
+    response?: Parser<
+      unknown,
+      ReturnType,
+      [
+        failWithCode: MethodHandlerApi['failWithCode'],
+        req: NextApiRequest,
+        res: NextApiResponse
+      ]
+    >;
   };
   /**
    * Validate the body/query/response is the correct type, either with a type guard (return true if match, false if not) or an invariant (throw if not match).

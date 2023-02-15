@@ -208,7 +208,7 @@ describe('createEndpointFactory', () => {
 
     const endpointWithValidation = createEndpoint({
       methods: ({ method }) => ({
-        post: method({
+        post: method<string>({
           parsers: {
             body: (body, failWithCode): 'foo' => {
               if (body !== 'foo') {
@@ -223,6 +223,7 @@ describe('createEndpointFactory', () => {
               }
               return { foo };
             },
+            response: (resp) => resp + 'bye',
           },
           handler: () => 'hi',
         }),
@@ -239,14 +240,22 @@ describe('createEndpointFactory', () => {
         useCorrectParams = false;
         const invalidQueryRes = await fetch({ method: 'POST', body: 'foo' });
         expect(invalidQueryRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidQueryRes.json()).message).toBe('Invalid query');
+        const invalidQueryJson = await invalidQueryRes.json();
+        expect(
+          typeof invalidQueryJson === 'object' && invalidQueryJson.message
+        ).toBe('Invalid query');
         useCorrectParams = true;
 
         const invalidBodyRes = await fetch({ method: 'POST', body: 'bar' });
         expect(invalidBodyRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidBodyRes.json()).message).toBe('Invalid body');
+        const invalidBodyJson = await invalidBodyRes.json();
+        expect(
+          typeof invalidBodyJson === 'object' && invalidBodyJson.message
+        ).toBe('Invalid body');
+
+        const correctRes = await fetch({ method: 'POST', body: 'foo' });
+        expect(correctRes.status).toBe(200);
+        expect(await correctRes.json()).toBe('hibye');
       },
     });
 

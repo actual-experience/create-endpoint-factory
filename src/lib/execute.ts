@@ -75,7 +75,7 @@ export const executeDefinition = async <
   >,
   disableAuthentication: DisableAuthentication,
   req: NextApiRequest,
-  res: NextApiResponse<ReturnType | SerializedErrorType>
+  res: NextApiResponse
 ) => {
   try {
     const authentication = disableAuthentication
@@ -109,17 +109,19 @@ export const executeDefinition = async <
     if (response instanceof ResError) {
       throw response;
     } else if (response instanceof ResSuccess) {
-      validate(validators?.response, response.response, [
-        500,
-        'Invalid response',
-      ]);
-      return res.status(response.statusCode).json(response.response);
+      const { response: resp } = response;
+      const parsedResponse =
+        parsers?.response?.(resp, failWithCode, req, res) ?? resp;
+      validate(validators?.response, parsedResponse, [500, 'Invalid response']);
+      return res.status(response.statusCode).json(parsedResponse);
     } else {
-      validate(validators?.response, response, [500, 'Invalid response']);
-      if (typeof response === 'undefined') {
+      const parsedResponse =
+        parsers?.response?.(response, failWithCode, req, res) ?? response;
+      validate(validators?.response, parsedResponse, [500, 'Invalid response']);
+      if (typeof parsedResponse === 'undefined') {
         return res.status(204).end();
       } else {
-        return res.status(200).json(response);
+        return res.status(200).json(parsedResponse);
       }
     }
   } catch (error) {
