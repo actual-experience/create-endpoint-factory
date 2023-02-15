@@ -19,7 +19,7 @@ It also provides some handy abstractions around returning data/catching errors.
 ### Features
 
 - One time authentication setup (with the ability to disable for a given route)
-- Automatic handling of unsupported methods and `OPTIONS` requests, using methods provided
+- Automatic handling of unsupported methods and `OPTIONS` requests
 - Automatic status code based on handler return
 - Customisable serialisation of uncaught errors
 - Customisable derivation of extra data from request
@@ -52,12 +52,12 @@ TODO: publish to npm
 
 ## Setup
 
-The main export from CEF is the `createEndpointFactory` function, which is used to make the prepared `createEndpoint` utility used for each NextJS API route.
+The main export from CEF is the `createEndpointFactory` function, which is used to make the prepared `createEndpoint` [factory](/concepts/factory) used for each NextJS API route.
 
 :::note
-You're able to name this returned function anything you like - in this documentation we'll be using `createEndpoint`.
+You're able to name this returned factory anything you like - in this documentation we'll be using `createEndpoint`.
 
-The framework also doesn't mind where you export this function from, as long as you're happy importing it into your API routes.
+The framework also doesn't mind where you export this factory from, as long as you're happy importing it into your API routes.
 :::
 
 ```ts no-transpile
