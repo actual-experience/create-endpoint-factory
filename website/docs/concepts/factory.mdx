@@ -137,6 +137,69 @@ export const endpoint = createEndpoint({
 
 ### Authentication
 
+It's a common use case to authenticate a request before processing it. This is done in CEF by providing an `authenticate` callback, which receives the current `request` and checks it before running the final handler.
+
+If the `authenticate` callback returns any data, it's provided to the method's handler as `authentication` in the `handlerApi` object.
+
+The callback receives `failWithCode` as its second argument, enabling it to throw any relevant [errors with an HTTP code](./method#custom-codes).
+
+```ts no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithAuth = createEndpointFactory({
+  authenticate: (req, failWithCode) => {
+    if (!req.headers.Authentication) {
+      throw failWithCode(401, 'Unauthorized request');
+    }
+    return req.headers.Authentication;
+  },
+});
+
+export const endpoint = createEndpointWithAuth({
+  methods: ({ method }) => ({
+    get: method({
+      handler: (req, res, { authentication }) => {
+        console.log(authentication); // same as req.headers.Authentication
+      },
+    }),
+  }),
+});
+```
+
+:::tip
+Some libraries prefer to do this with [decorators](./endpoint#handler-decoration) instead.
+There's currently no supported way to decorate all endpoints from a factory, so this would need to be done per endpoint.
+:::
+
+#### Disabling authentication for an endpoint
+
+If an individual [endpoint](./endpoint) should skip the authentication step, you can set the `disableAuthentication` key when creating it.
+
+```ts no-transpile title="Endpoint with disabled authentication"
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithAuth = createEndpointFactory({
+  authenticate: (req, failWithCode) => {
+    if (!req.headers.Authentication) {
+      throw failWithCode(401, 'Unauthorized request');
+    }
+    return req.headers.Authentication;
+  },
+});
+
+export const endpoint = createEndpointWithAuth({
+  methods: ({ method }) => ({
+    get: method({
+      handler: (req, res, { authentication }) => {
+        console.log(authentication); // undefined
+      },
+    }),
+  }),
+  // highlight-next-line
+  disableAuthentication: true,
+});
+```
+
 ### Extra information
 
 Sometimes it's desired to have additional information available to each handler, that might be derived from the original request. This is possible using the `extraApi` option when calling `createEndpointFactory`.
