@@ -5,13 +5,60 @@ description: A description of a method for an API route.
 
 # Method
 
+A method definition describes how an individual request to an [endpoint](./endpoint) should be handled, for a given HTTP method.
+
 ## Configuration
 
+A method definition can be configured to change its behaviour when executed.
+
 ### Handler
+
+The handler defines the main logic used when executing the method. It will be called with the [`request`](https://nextjs.org/docs/api-routes/request-helpers), [`response`](https://nextjs.org/docs/api-routes/response-helpers), and a `handlerApi` object.
+
+It's expected to execute some logic, and optionally return some data. Depending on what the method handler returns, the final [endpoint handler](./endpoint#combined-handler) will send a different status and response:
 
 import HandleTable from '../_handle-table.mdx';
 
 <HandleTable />
+
+```ts title="pages/api/foo.ts"
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: ({ method }) => ({
+    get: method({
+      // res.status(200).json('foo')
+      // highlight-next-line
+      handler: () => 'foo',
+    }),
+    put: method({
+      // res.status(204).end();
+      // highlight-start
+      handler: (req) => {
+        console.log(req.body);
+      },
+      // highlight-end
+    }),
+    post: method({
+      // res.status(500).json(serializeError(error));
+      // highlight-start
+      handler: () => {
+        throw new Error('oops!');
+      },
+      // highlight-end
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
 
 #### Custom codes
 

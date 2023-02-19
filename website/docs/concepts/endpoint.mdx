@@ -131,8 +131,26 @@ export const endpoint = createEndpoint({
 
 ## Instance
 
+Calling the factory function with configuration will return an object with a collection of useful handlers attached.
+
 ### Combined handler
+
+The endpoint handler (`handler` on the instance returned) combines all of the method definitions and (if provided) default into a final handler which will automatically execute the correct method definition based on the request method (or [default behaviour](#default-handler) if method is unsupported).
+
+:::tip
+
+This is usually what you'll want to export as default from your API route file.
+
+```ts no-transpile
+export default endpoint.handler;
+```
+
+:::
 
 ### Individual method handlers
 
+For each defined method, the final endpoint instance will have a handler attached under the `methods` key. For example, if you only had a GET handler defined, then there would be a handler defined for `endpoints.methods.get`.
+
 ### Default handler
+
+If a [default](#default-handler) is defined, a wrapped handler for this will be attached as `endpoint.default`.
