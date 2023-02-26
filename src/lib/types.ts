@@ -18,18 +18,6 @@ import type {
 
 type ExcludeAny<T> = IsAny<T, never, T>;
 
-export interface CustomizedNextApiRequest<
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query = any
-> extends NextApiRequest {
-  body: Body;
-  query: IsAny<
-    Query,
-    NextApiRequest['query'],
-    Query extends NextApiRequest['query'] ? Query : NextApiRequest['query']
-  >;
-}
-
 export type CustomizedNextApiHandler<
   ReturnType = any,
   SerializedErrorType = SerializedError,
@@ -45,11 +33,20 @@ export type Decorator<ReturnType = any> = (
 export type GenericsFromDecorator<Deco extends Decorator> =
   Deco extends Decorator<infer Return> ? { return: Return } : never;
 
+export type HandlerData<Body = unknown, Query = NextApiRequest['query']> = {
+  body: NoInfer<Body>;
+  query: NoInfer<Query>;
+};
+
 export interface MethodHandlerApi<
   ReturnType = any,
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > {
+  /** The original request object */
+  req: NextApiRequest;
+  /** Response object provided to API route */
+  res: NextApiResponse<NothingToAny<ReturnType>>;
   /**
    * Return a successful response with a specified HTTP code
    * ```js
@@ -85,8 +82,8 @@ export interface MethodHandlerApi<
 
 export type MethodDefinition<
   ReturnType = any,
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query = any,
+  Body = unknown,
+  Query = NextApiRequest['query'],
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
@@ -115,8 +112,7 @@ export type MethodDefinition<
    * Handles the request and return the specified data.
    */
   handler: (
-    req: CustomizedNextApiRequest<Body, Query>,
-    res: NextApiResponse<NothingToAny<ReturnType>>,
+    data: HandlerData<Body, Query>,
     api: MethodHandlerApi<ReturnType, Authentication, ExtraApi>
   ) => MaybePromise<
     NoInfer<ReturnType> | ResSuccess<NoInfer<ReturnType>> | ResError
@@ -180,10 +176,7 @@ export type MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
-  <ReturnType = unknown>(): <
-    Body extends NextApiRequest['body'] = NextApiRequest['body'],
-    Query extends NextApiRequest['query'] = NextApiRequest['query']
-  >(
+  <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
       ReturnType,
       Body,
@@ -200,7 +193,13 @@ export type MethodBuilder<
       Authentication,
       ExtraApi
     > & { parsers?: never }
-  ): typeof definition;
+  ): MethodDefinition<
+    ReturnType,
+    any,
+    NextApiRequest['query'],
+    Authentication,
+    ExtraApi
+  >;
 };
 
 export type MethodDefinitionToHandler<
@@ -215,13 +214,10 @@ export type MethodDefinitionToHandler<
   DecorReturn
 >;
 
-export type MethodDefinitions<
-  Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
-> = Partial<
+export type MethodDefinitions = Partial<
   Record<
     Lowercase<Exclude<HttpMethod, 'OPTIONS'>>,
-    MethodDefinition<any, any, any, Authentication, ExtraApi>
+    MethodDefinition<any, any, any, any, CreateExtraApi>
   >
 >;
 
@@ -230,10 +226,16 @@ export type MethodDefinitionsToHandlers<
   Config extends EndpointFactoryConfig,
   DecoReturn = never
 > = {
-  [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition
+  [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition<
+    any,
+    any,
+    any,
+    any,
+    CreateExtraApi
+  >
     ? MethodDefinitionToHandler<Definitions[Method], Config, DecoReturn>
     : [Definitions[Method]] extends [infer Def | undefined]
-    ? Def extends MethodDefinition
+    ? Def extends MethodDefinition<any, any, any, any, CreateExtraApi>
       ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
       : never
     : never;
@@ -332,18 +334,9 @@ export interface EndpointFactoryConfig<
 }
 
 export interface EndpointConfig<
-  Definitions extends MethodDefinitions<
-    ConditionalBool<DisableAuthentication, undefined, Authentication>,
-    ExtraApi
-  >,
+  Definitions extends MethodDefinitions,
   Default extends
-    | MethodDefinition<
-        any,
-        any,
-        any,
-        ConditionalBool<DisableAuthentication, undefined, Authentication>,
-        ExtraApi
-      >
+    | MethodDefinition<any, any, any, any, any>
     | undefined = undefined,
   DisableAuthentication extends boolean = false,
   Authentication = any,

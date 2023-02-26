@@ -98,7 +98,7 @@ import { id } from './utils/types';
 export const createEndpointFactory = <
   SerializedErrorType = SerializedError,
   Authentication = undefined,
-  ExtraApi extends CreateExtraApi = CreateExtraApi<void, undefined>
+  ExtraApi extends CreateExtraApi = CreateExtraApi<undefined, undefined>
 >(
   config: EndpointFactoryConfig<
     SerializedErrorType,
@@ -127,10 +127,7 @@ export const createEndpointFactory = <
   );
 
   return <
-    Definitions extends MethodDefinitions<
-      ConditionalBool<DisableAuthentication, undefined, Authentication>,
-      ExtraApi
-    >,
+    Definitions extends MethodDefinitions,
     Default extends
       | MethodDefinition<
           any,

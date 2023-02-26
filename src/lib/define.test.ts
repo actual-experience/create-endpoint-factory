@@ -1,6 +1,5 @@
 import stream from 'stream';
 import { promisify } from 'util';
-import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
 import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
@@ -18,11 +17,11 @@ describe('createEndpointFactory', () => {
           handler: () => Promise.resolve('foo'),
         }),
         post: method<'bar'>({
-          handler: (req, res, { succeedWithCode, failWithCode }) => {
-            if (!req.body) {
+          handler: ({ body }, { succeedWithCode, failWithCode }) => {
+            if (!body) {
               throw new Error('No body provided');
             }
-            if (req.body !== 'baz') {
+            if (body !== 'baz') {
               return failWithCode(400, 'Invalid body');
             }
             return succeedWithCode(201, 'bar');
@@ -134,7 +133,7 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Authorized>({
-          handler: (req, res, { authentication }) => {
+          handler: (_, { authentication }) => {
             expect(authentication).toEqual({ auth: true });
             return AuthStatus.Authorized;
           },
@@ -176,7 +175,7 @@ describe('createEndpointFactory', () => {
     const endpointWithoutAuth = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Unauthenticated>({
-          handler: (req, res, { authentication }) => {
+          handler: (_, { authentication }) => {
             expect(authentication).toEqual(authentication);
             return AuthStatus.Unauthenticated;
           },
@@ -315,8 +314,8 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         post: method<'hi'>({
-          handler: (req, res, { failWithCode }) => {
-            if (req.body === 'can retry') {
+          handler: ({ body }, { failWithCode }) => {
+            if (body === 'can retry') {
               throw new Error('try again');
             }
             return failWithCode(400, "don't try again", { doNotRetry: true });
@@ -359,11 +358,11 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<{ hasFoo: boolean }>({
-          handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: (_, { extra }) => ({ hasFoo: !!extra.foo }),
           extraOptions: { includeFoo: true },
         }),
         post: method<{ hasFoo: boolean }>({
-          handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: (_, { extra }) => ({ hasFoo: !!extra.foo }),
         }),
       }),
     });
@@ -384,14 +383,14 @@ describe('createEndpointFactory', () => {
       handler: createEndpointFactory()({
         methods: (method) => ({
           get: method<typeof nothing>({
-            handler: (req, res: NextApiResponse<'foo'>) => {
+            handler: (_, { res }) => {
               res.status(205);
               res.json('foo');
               return nothing;
             },
           }),
           post: method<typeof nothing>({
-            handler: async (req, res) => {
+            handler: async (_, { res }) => {
               res.status(205);
               await pipeline('foo', res);
               return nothing;

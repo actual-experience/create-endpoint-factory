@@ -9,11 +9,12 @@ import {
 import type {
   CreateExtraApi,
   EndpointFactoryConfig,
+  HandlerData,
   MethodDefinition,
   MethodHandlerApi,
 } from './types';
 import type { SerializedError } from './utils';
-import { safeAssign, miniSerializeError } from './utils';
+import { miniSerializeError } from './utils';
 import type { ConditionalBool } from './utils/types';
 
 const authenticate = <Authentication = undefined>(
@@ -67,10 +68,17 @@ export const executeDefinition = async <
     const authentication = disableAuthentication
       ? undefined
       : await authenticate(globalAuthenticate, req);
+    const data: HandlerData<any, any> = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
+      query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
+    };
     const api: MethodHandlerApi<
       ReturnType,
       ConditionalBool<DisableAuthentication, undefined, Authentication>
     > = {
+      req,
+      res,
       succeedWithCode,
       failWithCode,
       authentication: authentication as ConditionalBool<
@@ -81,12 +89,7 @@ export const executeDefinition = async <
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
     };
-    safeAssign(req, {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
-      query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
-    });
-    const response = await handler(req, res, api);
+    const response = await handler(data, api);
     if (isNothing(response) || res.writableEnded) {
       return;
     }
