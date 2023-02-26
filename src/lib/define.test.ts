@@ -133,7 +133,7 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Authorized>({
-          handler: (_, { authentication }) => {
+          handler: ({ authentication }) => {
             expect(authentication).toEqual({ auth: true });
             return AuthStatus.Authorized;
           },
@@ -175,7 +175,7 @@ describe('createEndpointFactory', () => {
     const endpointWithoutAuth = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Unauthenticated>({
-          handler: (_, { authentication }) => {
+          handler: ({ authentication }) => {
             expect(authentication).toEqual(authentication);
             return AuthStatus.Unauthenticated;
           },
@@ -358,11 +358,11 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<{ hasFoo: boolean }>({
-          handler: (_, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: ({ extra }) => ({ hasFoo: !!extra.foo }),
           extraOptions: { includeFoo: true },
         }),
         post: method<{ hasFoo: boolean }>({
-          handler: (_, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: ({ extra }) => ({ hasFoo: !!extra.foo }),
         }),
       }),
     });

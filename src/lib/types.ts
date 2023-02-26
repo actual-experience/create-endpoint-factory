@@ -33,16 +33,27 @@ export type Decorator<ReturnType = any> = (
 export type GenericsFromDecorator<Deco extends Decorator> =
   Deco extends Decorator<infer Return> ? { return: Return } : never;
 
-export type HandlerData<Body = unknown, Query = NextApiRequest['query']> = {
-  body: NoInfer<Body>;
-  query: NoInfer<Query>;
-};
-
-export interface MethodHandlerApi<
-  ReturnType = any,
+export type HandlerData<
+  Body = unknown,
+  Query = NextApiRequest['query'],
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> {
+> = {
+  body: NoInfer<Body>;
+  query: NoInfer<Query>;
+  /**
+   * Returned value from authentication function.
+   *
+   * Undefined if authentication is disabled.
+   */
+  authentication: Authentication;
+  /**
+   * Information returned from the `extraApi` function.
+   */
+  extra: ExtraApiReturn<ExtraApi>;
+};
+
+export interface MethodHandlerApi<ReturnType = any> {
   /** The original request object */
   req: NextApiRequest;
   /** Response object provided to API route */
@@ -68,16 +79,6 @@ export interface MethodHandlerApi<
    * ```
    */
   failWithCode: WrappedConstructor<typeof ResError>;
-  /**
-   * Returned value from authentication function.
-   *
-   * Undefined if authentication is disabled.
-   */
-  authentication: Authentication;
-  /**
-   * Information returned from the `extraApi` function.
-   */
-  extra: ExtraApiReturn<ExtraApi>;
 }
 
 export type MethodDefinition<
@@ -112,8 +113,8 @@ export type MethodDefinition<
    * Handles the request and return the specified data.
    */
   handler: (
-    data: HandlerData<Body, Query>,
-    api: MethodHandlerApi<ReturnType, Authentication, ExtraApi>
+    data: HandlerData<Body, Query, Authentication, ExtraApi>,
+    api: MethodHandlerApi<ReturnType>
   ) => MaybePromise<
     NoInfer<ReturnType> | ResSuccess<NoInfer<ReturnType>> | ResError
   >;

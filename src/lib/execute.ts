@@ -68,19 +68,15 @@ export const executeDefinition = async <
     const authentication = disableAuthentication
       ? undefined
       : await authenticate(globalAuthenticate, req);
-    const data: HandlerData<any, any> = {
+    const data: HandlerData<
+      any,
+      any,
+      ConditionalBool<DisableAuthentication, undefined, Authentication>,
+      ExtraApi
+    > = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
       query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
-    };
-    const api: MethodHandlerApi<
-      ReturnType,
-      ConditionalBool<DisableAuthentication, undefined, Authentication>
-    > = {
-      req,
-      res,
-      succeedWithCode,
-      failWithCode,
       authentication: authentication as ConditionalBool<
         DisableAuthentication,
         undefined,
@@ -88,6 +84,12 @@ export const executeDefinition = async <
       >,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
+    };
+    const api: MethodHandlerApi<ReturnType> = {
+      req,
+      res,
+      succeedWithCode,
+      failWithCode,
     };
     const response = await handler(data, api);
     if (isNothing(response) || res.writableEnded) {

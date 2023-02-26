@@ -27,7 +27,7 @@ const endpoint = createEndpoint({
     put: method<'bar'>({
       // @ts-expect-error parsers not allowed without double call
       parsers: {},
-      handler: ({ body, query }, { authentication }) => {
+      handler: ({ body, query, authentication }) => {
         expectUnknown(body);
         expectExactType<NextApiRequest['query']>({})(query);
         expectType<undefined>(authentication);
@@ -123,7 +123,7 @@ const createEndpointWithAuth = createEndpointFactory({
 const endpointWithAuth = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (_, { authentication }) => {
+      handler: ({ authentication }) => {
         expectType<{ auth: boolean }>(authentication);
       },
     }),
@@ -133,7 +133,7 @@ const endpointWithAuth = createEndpointWithAuth({
 const endpointWithAuthDisabled = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (_, { authentication }) => {
+      handler: ({ authentication }) => {
         expectType<undefined>(authentication);
       },
     }),
@@ -148,7 +148,7 @@ const createEndpointWithExtra = createEndpointFactory({
 const endpointWithExtra = createEndpointWithExtra({
   methods: (method) => ({
     get: method({
-      handler: (_, { extra }) => {
+      handler: ({ extra }) => {
         expectExactType({ str: '' })(extra);
       },
       extraOptions: 'foo',
@@ -164,7 +164,7 @@ const createEndpointWithExtraOptional = createEndpointFactory({
 const endpointWithExtraOptional = createEndpointWithExtraOptional({
   methods: (method) => ({
     get: method({
-      handler: (_, { extra }) => {
+      handler: ({ extra }) => {
         expectExactType<{ str: string | undefined }>({ str: '' })(extra);
       },
     }),
