@@ -10,20 +10,13 @@ const createEndpoint = createEndpointFactory();
 
 const endpoint = createEndpoint({
   methods: (method) => ({
-    get: method({
+    get: method<'foo'>()({
       parsers: {
         query: (query) =>
           z
             .record(z.coerce.string().transform(() => 'foo' as const))
             .parse(query),
-      },
-      validators: {
-        body: (body): body is 'body1' => body === 'body1',
-        response: function (response, failWithCode): asserts response is 'foo' {
-          if (response !== 'foo') {
-            throw failWithCode(500, 'invalid response');
-          }
-        },
+        body: (body) => z.literal('body1').parse(body),
       },
       handler: (req) => {
         expectExactType('body1' as const)(req.body);
@@ -31,7 +24,7 @@ const endpoint = createEndpoint({
         return 'foo' as const;
       },
     }),
-    put: method<'bar', 'body2'>({
+    put: method<'bar'>()<'body2'>({
       handler: (req, res, { authentication }) => {
         expectExactType('body2' as const)(req.body);
         expectExactType<NextApiRequest['query']>({})(req.query);
@@ -46,7 +39,7 @@ const endpoint = createEndpoint({
             handler: () => 'baz',
           }),
   }),
-  default: (method) => method<'baz', 'body3'>({ handler: () => 'baz' }),
+  default: (method) => method<'baz'>({ handler: () => 'baz' }),
 });
 
 const defaultHandler: NextApiHandler<'foo' | 'bar' | 'baz' | SerializedError> =

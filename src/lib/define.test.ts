@@ -5,7 +5,6 @@ import { testApiHandler } from 'next-test-api-route-handler';
 import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
-import { id } from './utils/types';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -15,10 +14,10 @@ describe('createEndpointFactory', () => {
 
     const endpoint = createEndpoint({
       methods: (method) => ({
-        get: method<'foo', any, { foo: 'bar' }>({
+        get: method<'foo'>({
           handler: () => Promise.resolve('foo'),
         }),
-        post: method<'bar', 'baz', { foo: 'bar' }>({
+        post: method<'bar'>({
           handler: (req, res, { succeedWithCode, failWithCode }) => {
             if (!req.body) {
               throw new Error('No body provided');
@@ -36,7 +35,7 @@ describe('createEndpointFactory', () => {
       handler: endpoint.handler,
       params: {
         foo: 'bar',
-      } satisfies GenericsFromHandler<typeof endpoint.handler>['query'],
+      },
       test: async ({ fetch }) => {
         const getRes = await fetch();
         expect(getRes.status).toBe(200);
@@ -46,9 +45,7 @@ describe('createEndpointFactory', () => {
 
         const postRes = await fetch({
           method: 'POST',
-          body: 'baz' satisfies GenericsFromHandler<
-            typeof endpoint.methods.post
-          >['body'],
+          body: 'baz',
         });
         expect(postRes.status).toBe(201);
         expect(await postRes.json()).toBe<
@@ -208,7 +205,7 @@ describe('createEndpointFactory', () => {
 
     const endpointWithValidation = createEndpoint({
       methods: (method) => ({
-        post: method<string>({
+        post: method<string>()({
           parsers: {
             body: (body, failWithCode): 'foo' => {
               if (body !== 'foo') {
@@ -223,7 +220,6 @@ describe('createEndpointFactory', () => {
               }
               return { foo };
             },
-            response: (resp) => resp + 'bye',
           },
           handler: () => 'hi',
         }),
@@ -252,16 +248,12 @@ describe('createEndpointFactory', () => {
         expect(
           typeof invalidBodyJson === 'object' && invalidBodyJson.message
         ).toBe('Invalid body');
-
-        const correctRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(correctRes.status).toBe(200);
-        expect(await correctRes.json()).toBe('hibye');
       },
     });
 
     const endpointWithTransforms = createEndpoint({
       methods: (method) => ({
-        post: method({
+        post: method()({
           parsers: {
             body: (body) =>
               z.coerce
@@ -283,11 +275,9 @@ describe('createEndpointFactory', () => {
 
     await testApiHandler({
       handler: endpointWithTransforms.handler,
-      params: id<
-        GenericsFromHandler<typeof endpointWithTransforms.handler>['query']
-      >({
+      params: {
         num: '2',
-      }),
+      },
       test: async ({ fetch }) => {
         const res = await fetch({ method: 'POST', body: 3 });
         expect(await res.json()).toStrictEqual({
@@ -296,57 +286,6 @@ describe('createEndpointFactory', () => {
             num: '4',
           },
         });
-      },
-    });
-  });
-
-  it('should allow for validation of query/body/response using type guards or invariants', async () => {
-    const createEndpoint = createEndpointFactory();
-
-    const endpoint = createEndpoint({
-      methods: (method) => ({
-        post: method({
-          validators: {
-            body: (body): body is 'foo' => body === 'foo',
-            query: (query): query is { foo: 'bar' } => query.foo === 'bar',
-            response: function (
-              response,
-              failWithCode
-            ): asserts response is 'bye' {
-              if (response !== 'bye') {
-                throw failWithCode(404, 'Whoopsie');
-              }
-            },
-          },
-          // @ts-expect-error wrong response
-          handler: () => 'hi',
-        }),
-      }),
-    });
-
-    let useCorrectParams = true;
-    await testApiHandler({
-      handler: endpoint.handler,
-      paramsPatcher: (params) => {
-        params.foo = useCorrectParams ? 'bar' : 'foo';
-      },
-      test: async ({ fetch }) => {
-        useCorrectParams = false;
-        const invalidQueryRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(invalidQueryRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidQueryRes.json()).message).toBe('Invalid query');
-        useCorrectParams = true;
-
-        const invalidBodyRes = await fetch({ method: 'POST', body: 'bar' });
-        expect(invalidBodyRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidBodyRes.json()).message).toBe('Invalid body');
-
-        const invalidResponseRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(invalidResponseRes.status).toBe(404);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidResponseRes.json()).message).toBe('Whoopsie');
       },
     });
   });

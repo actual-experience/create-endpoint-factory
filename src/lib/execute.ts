@@ -14,20 +14,7 @@ import type {
 } from './types';
 import type { SerializedError } from './utils';
 import { safeAssign, miniSerializeError } from './utils';
-import type { ConditionalBool, Validator } from './utils/types';
-
-const validate = <T, Input = any>(
-  validator:
-    | Validator<T, Input, [failWithCode: MethodHandlerApi['failWithCode']]>
-    | undefined,
-  input: Input,
-  defaultErrorArgs: Parameters<MethodHandlerApi['failWithCode']>
-) => {
-  const possiblyBool = validator?.(input, failWithCode);
-  if (typeof possiblyBool === 'boolean' && !possiblyBool) {
-    throw failWithCode(...defaultErrorArgs);
-  }
-};
+import type { ConditionalBool } from './utils/types';
 
 const authenticate = <Authentication = undefined>(
   authenticationFn: EndpointFactoryConfig<any, Authentication>['authenticate'],
@@ -63,7 +50,6 @@ export const executeDefinition = async <
   }: EndpointFactoryConfig<SerializedErrorType, Authentication, ExtraApi>,
   {
     parsers,
-    validators,
     handler,
     extraOptions,
   }: MethodDefinition<
@@ -100,8 +86,6 @@ export const executeDefinition = async <
       body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
       query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
     });
-    validate(validators?.body, req.body, [400, 'Invalid body']);
-    validate(validators?.query, req.query, [400, 'Invalid query']);
     const response = await handler(req, res, api);
     if (isNothing(response) || res.writableEnded) {
       return;
@@ -109,19 +93,12 @@ export const executeDefinition = async <
     if (response instanceof ResError) {
       throw response;
     } else if (response instanceof ResSuccess) {
-      const { response: resp } = response;
-      const parsedResponse =
-        parsers?.response?.(resp, failWithCode, req, res) ?? resp;
-      validate(validators?.response, parsedResponse, [500, 'Invalid response']);
-      return res.status(response.statusCode).json(parsedResponse);
+      return res.status(response.statusCode).json(response.response);
     } else {
-      const parsedResponse =
-        parsers?.response?.(response, failWithCode, req, res) ?? response;
-      validate(validators?.response, parsedResponse, [500, 'Invalid response']);
-      if (typeof parsedResponse === 'undefined') {
+      if (typeof response === 'undefined') {
         return res.status(204).end();
       } else {
-        return res.status(200).json(parsedResponse);
+        return res.status(200).json(response);
       }
     }
   } catch (error) {

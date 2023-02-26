@@ -14,7 +14,6 @@ import type {
   MaybePromise,
   NoInfer,
   Parser,
-  Validator,
 } from './utils/types';
 
 type ExcludeAny<T> = IsAny<T, never, T>;
@@ -31,24 +30,13 @@ export interface CustomizedNextApiRequest<
   >;
 }
 
-export interface CustomizedNextApiHandler<
+export type CustomizedNextApiHandler<
   ReturnType = any,
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query extends NextApiRequest['query'] = NextApiRequest['query'],
   SerializedErrorType = SerializedError,
   DecoratorReturn = any
-> extends NextApiHandler<
-    NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
-  > {
-  /**
-   * "Fake" property to help with extracting types
-   */
-  _body: Body;
-  /**
-   * "Fake" property to help with extracting types
-   */
-  _query: Query;
-}
+> = NextApiHandler<
+  NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
+>;
 
 export type Decorator<ReturnType = any> = (
   handler: NextApiHandler<ReturnType>
@@ -122,38 +110,6 @@ export type MethodDefinition<
       NextApiRequest['query'],
       [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
     >;
-    response?: Parser<
-      unknown,
-      ReturnType,
-      [
-        failWithCode: MethodHandlerApi['failWithCode'],
-        req: NextApiRequest,
-        res: NextApiResponse
-      ]
-    >;
-  };
-  /**
-   * Validate the body/query/response is the correct type, either with a type guard (return true if match, false if not) or an invariant (throw if not match).
-   * If a validator returns false, an error will be thrown (code 400 for body/query, 500 for response).
-   * If a standard error is thrown by a validator, 500 code will be used.
-   * Each validator receives `failWithCode` as its second argument, to allow for throwing errors with other HTTP codes.
-   */
-  validators?: {
-    body?: Validator<
-      Body,
-      NextApiRequest['body'],
-      [failWithCode: MethodHandlerApi['failWithCode']]
-    >;
-    query?: Validator<
-      Query,
-      NextApiRequest['query'],
-      [failWithCode: MethodHandlerApi['failWithCode']]
-    >;
-    response?: Validator<
-      ReturnType,
-      any,
-      [failWithCode: MethodHandlerApi['failWithCode']]
-    >;
   };
   /**
    * Handles the request and return the specified data.
@@ -195,18 +151,14 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
     : never;
 
 export type GenericsFromHandler<
-  Handler extends CustomizedNextApiHandler<any, any, any, any>
+  Handler extends CustomizedNextApiHandler<any, any, any>
 > = Handler extends CustomizedNextApiHandler<
   infer Return,
-  infer Body,
-  infer Query,
   infer Error,
   infer DecoratorReturn
 >
   ? {
       return: Return;
-      body: Body;
-      query: Query;
       error: Error;
       decoratorReturn: DecoratorReturn;
     }
@@ -240,18 +192,14 @@ export type MethodBuilder<
       ExtraApi
     >
   ) => typeof definition;
-  <
-    ReturnType = unknown,
-    Body extends NextApiRequest['body'] = NextApiRequest['body'],
-    Query extends NextApiRequest['query'] = NextApiRequest['query']
-  >(
+  <ReturnType = unknown>(
     definition: MethodDefinition<
       ReturnType,
-      Body,
-      Query,
+      unknown,
+      NextApiRequest['query'],
       Authentication,
       ExtraApi
-    >
+    > & { parsers?: never }
   ): typeof definition;
 };
 
@@ -263,8 +211,6 @@ export type MethodDefinitionToHandler<
   ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>
 > = CustomizedNextApiHandler<
   DefGenerics['return'],
-  DefGenerics['body'],
-  DefGenerics['query'],
   ConfGenerics['error'],
   DecorReturn
 >;
@@ -326,8 +272,6 @@ export type EndpointDefinition<
     /** Combined handler, which will automatically choose the respective handler (or return 405 if none found) based on the method requested */
     handler: CustomizedNextApiHandler<
       UnionedGenerics['return'],
-      UnionedGenerics['body'],
-      UnionedGenerics['query'],
       ConfGenerics['error'],
       DecoReturn
     >;

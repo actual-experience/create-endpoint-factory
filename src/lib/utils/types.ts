@@ -62,21 +62,7 @@ export type PickRequired<T, K extends keyof T> = Id<
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type TypeGuard<T, Input = any, ExtraParams extends any[] = []> = (
-  input: Input,
-  ...params: ExtraParams
-) => input is T extends Input ? T : never;
-
-export type TypeInvariant<T, Input = any, ExtraParams extends any[] = []> = (
-  input: Input,
-  ...params: ExtraParams
-) => asserts input is T extends Input ? T : never;
-
-export type Validator<T, Input = any, ExtraParams extends any[] = []> =
-  | TypeGuard<T, Input, ExtraParams>
-  | TypeInvariant<T, Input, ExtraParams>;
-
-export type Parser<Output, Input = Output, ExtraParams extends any[] = []> = (
+export type Parser<Output, Input = unknown, ExtraParams extends any[] = []> = (
   input: Input,
   ...params: ExtraParams
 ) => Output;
