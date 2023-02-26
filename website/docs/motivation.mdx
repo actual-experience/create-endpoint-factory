@@ -280,18 +280,6 @@ export class Book extends Model<
 
 export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
 
-// file: src/server/schema.ts
-import type { ZodSchema } from 'zod';
-
-/**
- * Provided as an example recipe.
- * CEF accepts type guards (return `true` if matches) or invariants (throw if doesn't match), but it can be useful to use a schema library such as Zod.
- */
-export const schemaToInvariant = <T>(schema: ZodSchema<T>) =>
-  function invariant(input: unknown): asserts input is T {
-    schema.parse(input);
-  };
-
 // file: src/server/index.ts
 import { createEndpointFactory } from 'next-create-endpoint-factory';
 import { getAuthTokens } from './auth';
@@ -319,7 +307,6 @@ import type { Tokens } from '../../../src/server/auth';
 import { getAuthTokens } from '../../../src/server/auth';
 import type { Book } from '../../../src/server/books';
 import { getBookFromReq } from '../../../src/server/books';
-import { schemaToInvariant } from '../../../src/server/schema';
 
 const UpdateRequestSchema = z.object({
   name: z.string().optional(),
@@ -342,19 +329,13 @@ const endpoint = createEndpoint({
       },
     }),
     put: method({
-      // highlight-start
-      // types can be inferred from provided validators, instead of providing to generics
-      validators: {
-        body: schemaToInvariant(UpdateRequestSchema),
-        // `alwaysMatch` is a util provided for allowing inferrence from validators while providing a given type for the response
-        // runtime checks for the handler response may not be necessary if using typescript
-        response: alwaysMatch<{ edited: boolean }>(),
-        query: (query): query is { id: string } => typeof query.id === 'string',
-      },
-      // highlight-end
-      handler: async (req) => {
+      handler: async (req, res, { failWithCode }) => {
         const book = await getBookFromReq(req);
-        await book.update(req.body); // body is now typed correctly since we've validated it
+        const parseResult = UpdateRequestSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          throw failWithCode(400, 'invalid body');
+        }
+        await book.update(parseResult.data);
         return { edited: true };
       },
     }),
