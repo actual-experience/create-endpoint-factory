@@ -314,7 +314,7 @@ const UpdateRequestSchema = z.object({
 });
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method<{ book: Book }>({
       // @ts-expect-error
       handler: async (req) => {

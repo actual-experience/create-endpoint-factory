@@ -78,7 +78,7 @@ export const createEndpoint = createEndpointFactory({
 });
 
 export const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { failWithCode }) => {
         throw failWithCode(404, 'this message is internal', {
@@ -121,7 +121,7 @@ export const createEndpoint = createEndpointFactory({
 });
 
 export const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: () => {
         throw new ToastableError(
@@ -156,7 +156,7 @@ export const createEndpointWithAuth = createEndpointFactory({
 });
 
 export const endpoint = createEndpointWithAuth({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { authentication }) => {
         console.log(authentication); // same as req.headers.Authentication
@@ -188,7 +188,7 @@ export const createEndpointWithAuth = createEndpointFactory({
 });
 
 export const endpoint = createEndpointWithAuth({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { authentication }) => {
         console.log(authentication); // undefined
@@ -221,7 +221,7 @@ export const createEndpointWithExtra = createEndpointFactory({
 });
 
 export const endpoint = createEndpointWithExtra({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { extra }) => {
         console.log(extra.square); // number or undefined
@@ -271,7 +271,7 @@ export const createEndpointWithExtra = createEndpointFactory({
 });
 
 export const endpoint = createEndpointWithExtra({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { extra }) => {
         console.log(extra.square); // number or undefined

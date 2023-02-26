@@ -103,7 +103,7 @@ export const createEndpoint = createEndpointFactory();
 import { createEndpoint } from '../../src/api';
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method<string>({
       handler: () => {
         return 'foo';

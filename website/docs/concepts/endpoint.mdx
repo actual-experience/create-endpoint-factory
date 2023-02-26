@@ -11,7 +11,7 @@ It is returned from calling a [factory](./factory) (called `createEndpoint` in t
 
 ```ts no-transpile
 export const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: () => 'foo',
     }),
@@ -32,7 +32,7 @@ The main way of defining an endpoint's behaviour is by creating [method](./metho
 ```ts no-transpile
 export const endpoint = createEndpoint({
   // highlight-start
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: () => 'foo',
     }),
@@ -49,13 +49,13 @@ If you wish to replace this behaviour, you can provide a `default` handler:
 
 ```ts no-transpile
 export const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: () => 'foo',
     }),
   }),
   // highlight-start
-  default: ({ method }) =>
+  default: (method) =>
     method({
       handler: (req, res, { failWithCode }) => {
         res.setHeader('Allow', 'GET');

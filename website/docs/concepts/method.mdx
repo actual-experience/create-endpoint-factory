@@ -32,7 +32,7 @@ export const createEndpoint = createEndpointFactory();
 import { createEndpoint } from '../../src/api';
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       // res.status(200).json('foo')
       // highlight-next-line
@@ -75,7 +75,7 @@ export const createEndpoint = createEndpointFactory();
 import { createEndpoint } from '../../src/api';
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     post: method<{ created: true }>({
       handler: (req, res, { failWithCode, succeedWithCode }) => {
         console.log(req.body);
@@ -110,7 +110,7 @@ import { promisify } from 'util';
 const pipeline = promisify(stream.pipeline);
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { failWithCode }) => {
         const response = await fetch(

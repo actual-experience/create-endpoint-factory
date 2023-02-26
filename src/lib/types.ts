@@ -221,27 +221,25 @@ export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
     ? { error: Error; authentication: Authentication; extra: ExtraApi }
     : never;
 
-export interface MethodBuilder<
+/**
+ * Define a method handler and associated configuration.
+ */
+export type MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> {
-  /**
-   * Define a method handler and associated configuration.
-   */
-  method: <
-    ReturnType = any,
-    Body extends NextApiRequest['body'] = NextApiRequest['body'],
-    Query extends NextApiRequest['query'] = NextApiRequest['query']
-  >(
-    definition: MethodDefinition<
-      ReturnType,
-      Body,
-      Query,
-      Authentication,
-      ExtraApi
-    >
-  ) => typeof definition;
-}
+> = <
+  ReturnType = any,
+  Body extends NextApiRequest['body'] = NextApiRequest['body'],
+  Query extends NextApiRequest['query'] = NextApiRequest['query']
+>(
+  definition: MethodDefinition<
+    ReturnType,
+    Body,
+    Query,
+    Authentication,
+    ExtraApi
+  >
+) => typeof definition;
 
 export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
@@ -401,7 +399,7 @@ export interface EndpointConfig<
    * ```
    */
   methods: (
-    build: MethodBuilder<
+    method: MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
     >
@@ -413,7 +411,7 @@ export interface EndpointConfig<
    * ```
    */
   default?: (
-    build: MethodBuilder<
+    method: MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
     >

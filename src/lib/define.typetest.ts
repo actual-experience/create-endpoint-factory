@@ -9,7 +9,7 @@ import { expectExactType, expectType } from './utils/typetests';
 const createEndpoint = createEndpointFactory();
 
 const endpoint = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       parsers: {
         query: (query) =>
@@ -46,7 +46,7 @@ const endpoint = createEndpoint({
             handler: () => 'baz',
           }),
   }),
-  default: ({ method }) => method<'baz', 'body3'>({ handler: () => 'baz' }),
+  default: (method) => method<'baz', 'body3'>({ handler: () => 'baz' }),
 });
 
 const defaultHandler: NextApiHandler<'foo' | 'bar' | 'baz' | SerializedError> =
@@ -78,7 +78,7 @@ const wrappedHandler: NextApiHandler<
 };
 
 const endpointNoDefault = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method<'foo'>({
       handler: () => 'foo',
     }),
@@ -110,7 +110,7 @@ const badWrappedHandler: NextApiHandler<'foo' | 'qux' | SerializedError> = (
 };
 
 const endpointWithNothing = createEndpoint({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method<typeof nothing>({
       handler: async (req, res) => {
         res.send(true); // this shouldn't error because T should be any
@@ -126,7 +126,7 @@ const createEndpointWithAuth = createEndpointFactory({
 });
 
 const endpointWithAuth = createEndpointWithAuth({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { authentication }) => {
         expectType<{ auth: boolean }>(authentication);
@@ -136,7 +136,7 @@ const endpointWithAuth = createEndpointWithAuth({
 });
 
 const endpointWithAuthDisabled = createEndpointWithAuth({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { authentication }) => {
         expectType<undefined>(authentication);
@@ -151,7 +151,7 @@ const createEndpointWithExtra = createEndpointFactory({
 });
 
 const endpointWithExtra = createEndpointWithExtra({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { extra }) => {
         expectExactType({ str: '' })(extra);
@@ -167,7 +167,7 @@ const createEndpointWithExtraOptional = createEndpointFactory({
 });
 
 const endpointWithExtraOptional = createEndpointWithExtraOptional({
-  methods: ({ method }) => ({
+  methods: (method) => ({
     get: method({
       handler: (req, res, { extra }) => {
         expectExactType<{ str: string | undefined }>({ str: '' })(extra);

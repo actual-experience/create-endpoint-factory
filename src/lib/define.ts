@@ -180,9 +180,7 @@ export const createEndpointFactory = <
     const builder: MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
-    > = {
-      method: (definition) => definition,
-    };
+    > = (definition) => definition;
 
     const methodDefinitions = buildMethods(builder);
     assert(
