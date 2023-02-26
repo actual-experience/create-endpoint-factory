@@ -227,19 +227,33 @@ export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
 export type MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = <
-  ReturnType = any,
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query extends NextApiRequest['query'] = NextApiRequest['query']
->(
-  definition: MethodDefinition<
-    ReturnType,
-    Body,
-    Query,
-    Authentication,
-    ExtraApi
-  >
-) => typeof definition;
+> = {
+  <ReturnType = unknown>(): <
+    Body extends NextApiRequest['body'] = NextApiRequest['body'],
+    Query extends NextApiRequest['query'] = NextApiRequest['query']
+  >(
+    definition: MethodDefinition<
+      ReturnType,
+      Body,
+      Query,
+      Authentication,
+      ExtraApi
+    >
+  ) => typeof definition;
+  <
+    ReturnType = unknown,
+    Body extends NextApiRequest['body'] = NextApiRequest['body'],
+    Query extends NextApiRequest['query'] = NextApiRequest['query']
+  >(
+    definition: MethodDefinition<
+      ReturnType,
+      Body,
+      Query,
+      Authentication,
+      ExtraApi
+    >
+  ): typeof definition;
+};
 
 export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
@@ -395,7 +409,7 @@ export interface EndpointConfig<
   /**
    * Callback to define individual method handlers.
    * ```ts
-   * methods: ({ method }) =>({ get: method<'foo'>({ handler: () => 'foo' }) })
+   * methods: (method) =>({ get: method<'foo'>({ handler: () => 'foo' }) })
    * ```
    */
   methods: (
@@ -407,7 +421,7 @@ export interface EndpointConfig<
   /**
    * Callback to define a catch-all handler, used if there isn't a specific handler provided for the requested method.
    * ```ts
-   * default: ({ method }) =>method<'bar'>({ handler: () => 'bar' });
+   * default: (method) =>method<'bar'>({ handler: () => 'bar' });
    * ```
    */
   default?: (

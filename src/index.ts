@@ -1,5 +1,5 @@
 export { createEndpointFactory } from './lib/define';
-export { miniSerializeError, alwaysMatch, decorateHandler } from './lib/utils';
+export { miniSerializeError, decorateHandler } from './lib/utils';
 export type { SerializedError } from './lib/utils';
 export type {
   TypeGuard,

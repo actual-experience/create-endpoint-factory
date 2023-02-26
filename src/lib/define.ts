@@ -33,7 +33,7 @@ import { id } from './utils/types';
  *
  * // api/books/
  * export default createEndpoint({
- *   methods: ({ method }) =>({
+ *   methods: (method) =>({
  *     get: method<{ books: Book[] }>({
  *       handler: async () => ({ books: await Book.findAll() }),
  *     }),
@@ -53,7 +53,7 @@ import { id } from './utils/types';
  *
  * // api/books/:id
  * export default createEndpoint({
- *   methods: ({ method }) =>({
+ *   methods: (method) =>({
  *     get: method<Book>({
  *       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
  *     }),
@@ -79,7 +79,7 @@ import { id } from './utils/types';
  *
  * // api/auth/token
  * export default createEndpoint({
- *   methods: ({ method }) =>({
+ *   methods: (method) =>({
  *    post: method<{ token: string }>({
  *      handler: async (req, res, { failWithCode }) => {
  *        const parseResult = BodySchema.safeParse(req.body);
@@ -177,10 +177,16 @@ export const createEndpointFactory = <
       `\`disableAuthentication\` must be a boolean, received ${typeof disableAuthentication}`
     );
 
-    const builder: MethodBuilder<
+    const builder = ((definition) => {
+      // builder<ReturnType>()({ parsers, handler })
+      if (!definition) {
+        return builder;
+      }
+      return definition;
+    }) as MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
-    > = (definition) => definition;
+    >;
 
     const methodDefinitions = buildMethods(builder);
     assert(

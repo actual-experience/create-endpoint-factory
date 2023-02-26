@@ -301,7 +301,6 @@ export const createEndpoint = createEndpointFactory({
 // file: pages/api/book/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import z from 'zod';
-import { alwaysMatch } from 'next-create-endpoint-factory';
 import { createEndpoint } from '../../../src/server';
 import type { Tokens } from '../../../src/server/auth';
 import { getAuthTokens } from '../../../src/server/auth';

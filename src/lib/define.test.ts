@@ -14,7 +14,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         get: method<'foo', any, { foo: 'bar' }>({
           handler: () => Promise.resolve('foo'),
         }),
@@ -83,7 +83,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         get: method({
           // eslint-disable-next-line @typescript-eslint/no-empty-function
           handler: () => {},
@@ -135,7 +135,7 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         get: method<AuthStatus.Authorized>({
           handler: (req, res, { authentication }) => {
             expect(authentication).toEqual({ auth: true });
@@ -177,7 +177,7 @@ describe('createEndpointFactory', () => {
     });
 
     const endpointWithoutAuth = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         get: method<AuthStatus.Unauthenticated>({
           handler: (req, res, { authentication }) => {
             expect(authentication).toEqual(authentication);
@@ -207,7 +207,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpointWithValidation = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         post: method<string>({
           parsers: {
             body: (body, failWithCode): 'foo' => {
@@ -260,7 +260,7 @@ describe('createEndpointFactory', () => {
     });
 
     const endpointWithTransforms = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         post: method({
           parsers: {
             body: (body) =>
@@ -304,7 +304,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         post: method({
           validators: {
             body: (body): body is 'foo' => body === 'foo',
@@ -374,7 +374,7 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         post: method<'hi'>({
           handler: (req, res, { failWithCode }) => {
             if (req.body === 'can retry') {
@@ -418,7 +418,7 @@ describe('createEndpointFactory', () => {
     });
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         get: method<{ hasFoo: boolean }>({
           handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
           extraOptions: { includeFoo: true },
@@ -443,7 +443,7 @@ describe('createEndpointFactory', () => {
   it('should allow returning a specific symbol to indicate that the response has already been sent', async () => {
     await testApiHandler({
       handler: createEndpointFactory()({
-        methods: ({ method }) => ({
+        methods: (method) => ({
           get: method<typeof nothing>({
             handler: (req, res: NextApiResponse<'foo'>) => {
               res.status(205);
@@ -479,7 +479,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
     const makeEndpoint = (includePatch = false) =>
       createEndpoint({
-        methods: ({ method }) => ({
+        methods: (method) => ({
           get: method<'foo'>({
             handler: () => 'foo',
           }),
@@ -555,7 +555,7 @@ describe('createEndpointFactory', () => {
     [
       () =>
         createEndpointFactory()({
-          methods: ({ method }) => ({
+          methods: (method) => ({
             // @ts-expect-error each method needs to be a definition or undefined
             get: false,
             // @ts-expect-error each method needs to be a definition or undefined
@@ -600,7 +600,7 @@ describe('createEndpointFactory', () => {
     const createEndpoint = createEndpointFactory();
 
     const endpoint = createEndpoint({
-      methods: ({ method }) => ({
+      methods: (method) => ({
         post: method<{ caught: 'uncaught' }>({
           handler: () => ({
             caught: 'uncaught',
