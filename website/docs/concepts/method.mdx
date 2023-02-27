@@ -41,8 +41,8 @@ const endpoint = createEndpoint({
     put: method({
       // res.status(204).end();
       // highlight-start
-      handler: (req) => {
-        console.log(req.body);
+      handler: ({ body }) => {
+        console.log(body);
       },
       // highlight-end
     }),
@@ -77,9 +77,9 @@ import { createEndpoint } from '../../src/api';
 const endpoint = createEndpoint({
   methods: (method) => ({
     post: method<{ created: true }>({
-      handler: (req, res, { failWithCode, succeedWithCode }) => {
-        console.log(req.body);
-        if (!req.body) {
+      handler: ({ body }, { failWithCode, succeedWithCode }) => {
+        console.log(body);
+        if (!body) {
           throw failWithCode(400, 'No body provided');
         }
         return succeedWithCode(201, { created: true });
@@ -112,7 +112,7 @@ const pipeline = promisify(stream.pipeline);
 const endpoint = createEndpoint({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { failWithCode }) => {
+      handler: (_, { res, failWithCode }) => {
         const response = await fetch(
           'https://w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
         );

@@ -80,7 +80,7 @@ export const createEndpoint = createEndpointFactory({
 export const endpoint = createEndpoint({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { failWithCode }) => {
+      handler: (_, { failWithCode }) => {
         throw failWithCode(404, 'this message is internal', {
           isToastable: true,
           toastMsg: 'This message is toastable!',
@@ -158,7 +158,7 @@ export const createEndpointWithAuth = createEndpointFactory({
 export const endpoint = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { authentication }) => {
+      handler: ({ authentication }) => {
         console.log(authentication); // same as req.headers.Authentication
       },
     }),
@@ -190,7 +190,7 @@ export const createEndpointWithAuth = createEndpointFactory({
 export const endpoint = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { authentication }) => {
+      handler: ({ authentication }) => {
         console.log(authentication); // undefined
       },
     }),
@@ -223,7 +223,7 @@ export const createEndpointWithExtra = createEndpointFactory({
 export const endpoint = createEndpointWithExtra({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { extra }) => {
+      handler: ({ extra }) => {
         console.log(extra.square); // number or undefined
       },
     }),
@@ -273,7 +273,7 @@ export const createEndpointWithExtra = createEndpointFactory({
 export const endpoint = createEndpointWithExtra({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { extra }) => {
+      handler: ({ extra }) => {
         console.log(extra.square); // number or undefined
       },
       // highlight-next-line

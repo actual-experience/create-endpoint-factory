@@ -110,9 +110,9 @@ const endpoint = createEndpoint({
       },
     }),
     post: method<void>({
-      handler: (req, res) => {
-        console.log(req.body);
-        if (!req.body) {
+      handler: ({ body }) => {
+        console.log(body);
+        if (!body) {
           throw new Error('no body');
         }
       },

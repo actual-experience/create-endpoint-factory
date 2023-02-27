@@ -38,8 +38,8 @@ import { id } from './utils/types';
  *       handler: async () => ({ books: await Book.findAll() }),
  *     }),
  *     post: method<{ id: EntityId }>({
- *       handler: async (req, res, { failWithCode, succeedWithCode }) => {
- *         const parseResult = BookSchema.safeParse(req.body);
+ *       handler: async ({ body }, { res, failWithCode, succeedWithCode }) => {
+ *         const parseResult = BookSchema.safeParse(body);
  *         if (!parseResult.success) {
  *           throw failWithCode(400, parseResult.error.message, parseResult.error);
  *         }
@@ -55,12 +55,12 @@ import { id } from './utils/types';
  * export default createEndpoint({
  *   methods: (method) =>({
  *     get: method<Book>({
- *       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
+ *       handler: async (_, { req, failWithCode }) => await getBookFromReq(req),
  *     }),
  *     patch: method<void>({
- *       handler: async (req, res, { failWithCode }) => {
+ *       handler: async ({ body }, { req, res, failWithCode }) => {
  *         const book = await getBookFromReq(req);
- *         const parseResult = BookSchema.partial().safeParse(req.body);
+ *         const parseResult = BookSchema.partial().safeParse(body);
  *         if (!parseResult.success) {
  *           throw failWithCode(400, parseResult.error.message, parseResult.error);
  *         }
@@ -69,7 +69,7 @@ import { id } from './utils/types';
  *       },
  *     }),
  *     delete: method<void>({
- *       handler: async (req) => {
+ *       handler: async (_, {req}) => {
  *         const book = await getBookFromReq(req);
  *         await book.delete();
  *       },
@@ -81,8 +81,8 @@ import { id } from './utils/types';
  * export default createEndpoint({
  *   methods: (method) =>({
  *    post: method<{ token: string }>({
- *      handler: async (req, res, { failWithCode }) => {
- *        const parseResult = BodySchema.safeParse(req.body);
+ *      handler: async ({ body }, { failWithCode }) => {
+ *        const parseResult = BodySchema.safeParse(body);
  *        if (!parseResult.success) {
  *          throw failWithCode(400, parseResult.error.message, parseResult.error);
  *        }

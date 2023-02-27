@@ -316,7 +316,7 @@ const endpoint = createEndpoint({
   methods: (method) => ({
     get: method<{ book: Book }>({
       // @ts-expect-error
-      handler: async (req) => {
+      handler: async (_, { req }) => {
         const book = await getBookFromReq(req);
         if (Math.random() > 0.5) {
           // success-start
@@ -328,9 +328,9 @@ const endpoint = createEndpoint({
       },
     }),
     put: method({
-      handler: async (req, res, { failWithCode }) => {
+      handler: async ({ body }, { req, failWithCode }) => {
         const book = await getBookFromReq(req);
-        const parseResult = UpdateRequestSchema.safeParse(req.body);
+        const parseResult = UpdateRequestSchema.safeParse(body);
         if (!parseResult.success) {
           throw failWithCode(400, 'invalid body');
         }
@@ -339,7 +339,7 @@ const endpoint = createEndpoint({
       },
     }),
     delete: method<void>({
-      handler: async (req) => {
+      handler: async (_, { req }) => {
         const book = await getBookFromReq(req);
         await book.destroy();
         // status code is automatically 204 since we didn't return
