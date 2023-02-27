@@ -11,7 +11,7 @@ import type {
   EndpointFactoryConfig,
   HandlerData,
   MethodDefinition,
-  MethodHandlerApi,
+  HandlerApi,
 } from './types';
 import type { SerializedError } from './utils';
 import { miniSerializeError } from './utils';
@@ -74,6 +74,7 @@ export const executeDefinition = async <
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
     > = {
+      req,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
       query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
@@ -85,8 +86,7 @@ export const executeDefinition = async <
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
     };
-    const api: MethodHandlerApi<ReturnType> = {
-      req,
+    const api: HandlerApi<ReturnType> = {
       res,
       succeedWithCode,
       failWithCode,

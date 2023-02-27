@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import type {
+  FailWithCode,
   HttpMethod,
   NothingToAny,
   ResError,
@@ -39,7 +40,11 @@ export type HandlerData<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
+  /** The original request object */
+  req: NextApiRequest;
+  /** Request body, parsed with parsers.body */
   body: NoInfer<Body>;
+  /** Request query, parsed with parsers.query */
   query: NoInfer<Query>;
   /**
    * Returned value from authentication function.
@@ -53,10 +58,11 @@ export type HandlerData<
   extra: ExtraApiReturn<ExtraApi>;
 };
 
-export interface MethodHandlerApi<ReturnType = any> {
-  /** The original request object */
-  req: NextApiRequest;
-  /** Response object provided to API route */
+/**
+ * Helpers for the handler response
+ */
+export interface HandlerApi<ReturnType = any> {
+  /** Original response object provided to API route */
   res: NextApiResponse<NothingToAny<ReturnType>>;
   /**
    * Return a successful response with a specified HTTP code
@@ -101,12 +107,12 @@ export type MethodDefinition<
     body?: Parser<
       Body,
       unknown,
-      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
+      [failWithCode: FailWithCode, req: NextApiRequest]
     >;
     query?: Parser<
       Query,
       NextApiRequest['query'],
-      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
+      [failWithCode: FailWithCode, req: NextApiRequest]
     >;
   };
   /**
@@ -114,7 +120,7 @@ export type MethodDefinition<
    */
   handler: (
     data: HandlerData<Body, Query, Authentication, ExtraApi>,
-    api: MethodHandlerApi<ReturnType>
+    api: HandlerApi<ReturnType>
   ) => MaybePromise<
     NoInfer<ReturnType> | ResSuccess<NoInfer<ReturnType>> | ResError
   >;
@@ -326,7 +332,7 @@ export interface EndpointFactoryConfig<
    */
   authenticate?: (
     req: NextApiRequest,
-    failWithCode: MethodHandlerApi['failWithCode']
+    failWithCode: FailWithCode
   ) => MaybePromise<Authentication>;
   /**
    * Derive extra information about the request, and include it as `extra` in the handlerApi object.
