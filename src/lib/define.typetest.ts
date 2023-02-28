@@ -2,7 +2,6 @@
 import { pipeline } from 'stream/promises';
 import type { NextApiHandler, NextApiRequest } from 'next';
 import z from 'zod';
-import type { FailWithCode } from '..';
 import { createEndpointFactory, nothing } from '..';
 import type { SerializedError } from './utils';
 import { expectExactType, expectType, expectUnknown } from './utils/typetests';

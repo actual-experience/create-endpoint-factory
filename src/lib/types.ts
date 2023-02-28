@@ -95,13 +95,11 @@ export type MethodDefinition<
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
   /**
-   * Receive the body/query/response and return a validated version of it. Expected to throw errors if invalid type.
+   * Receive the body/query/response and return a parsed version of it. Expected to throw errors if invalid type.
    * If a standard error is thrown, 500 code will be used.
    * Each parser receives `failWithCode` as its second argument, to allow for throwing errors with other HTTP codes.
    *
    * Original request object is passed as third argument.
-   *
-   * **Will be run *before* validators**
    */
   parsers?: {
     body?: Parser<
@@ -204,7 +202,12 @@ export type MethodBuilder<
       NextApiRequest['query'],
       Authentication,
       ExtraApi
-    > & { parsers?: never }
+    > & {
+      /**
+       * Parsers require a double call of the builder, i.e. `method<ReturnType>()({ parsers, handler })`
+       */
+      parsers?: never;
+    }
   ): MethodDefinition<
     ReturnType,
     any,
