@@ -1,0 +1,134 @@
+---
+sidebar_position: 3
+description: A description of a method for an API route.
+---
+
+# Method
+
+A method definition describes how an individual request to an [endpoint](./endpoint) should be handled, for a given HTTP method.
+
+## Configuration
+
+A method definition can be configured to change its behaviour when executed.
+
+### Handler
+
+The handler defines the main logic used when executing the method. It will be called with the [`request`](https://nextjs.org/docs/api-routes/request-helpers), [`response`](https://nextjs.org/docs/api-routes/response-helpers), and a `handlerApi` object.
+
+It's expected to execute some logic, and optionally return some data. Depending on what the method handler returns, the final [endpoint handler](./endpoint#combined-handler) will send a different status and response:
+
+import HandleTable from '../_handle-table.mdx';
+
+<HandleTable />
+
+```ts title="pages/api/foo.ts"
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    get: method({
+      // res.status(200).json('foo')
+      // highlight-next-line
+      handler: () => 'foo',
+    }),
+    put: method({
+      // res.status(204).end();
+      // highlight-start
+      handler: (req) => {
+        console.log(req.body);
+      },
+      // highlight-end
+    }),
+    post: method({
+      // res.status(500).json(serializeError(error));
+      // highlight-start
+      handler: () => {
+        throw new Error('oops!');
+      },
+      // highlight-end
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+#### Custom codes
+
+In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
+
+```ts title="pages/api/foo.ts"
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    post: method<{ created: true }>({
+      handler: (req, res, { failWithCode, succeedWithCode }) => {
+        console.log(req.body);
+        if (!req.body) {
+          throw failWithCode(400, 'No body provided');
+        }
+        return succeedWithCode(201, { created: true });
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+_`failWithCode` can be returned or thrown, but it's generally better to throw it yourself._
+
+#### Disabling default response handling
+
+Typically, the default behaviour is preferable as it leads to less code overall.
+
+However, sometimes it might be desireable to use the `res` parameter to send your response yourself (using it as a writeable stream, for example).
+
+To indicate that you have already sent the response and don't want CEF to conduct its usual response handling, you can return the [`nothing`](/exports#nothing) symbol exported from CEF inside your handler.
+
+```ts no-transpile
+import { nothing } from 'next-create-endpoint-factory';
+import { createEndpoint } from '../../src/api';
+import stream from 'stream';
+import { promisify } from 'util';
+
+const pipeline = promisify(stream.pipeline);
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { failWithCode }) => {
+        const response = await fetch(
+          'https://w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+        );
+        if (!response.ok) {
+          throw failWithCode(response.status, response.statusText);
+        }
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=dummy.pdf');
+        await pipeline(response.body, res);
+        return nothing;
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+<!-- choosing not to document parsing/validation yet due to #3 -->

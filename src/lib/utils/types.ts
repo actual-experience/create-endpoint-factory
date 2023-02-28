@@ -1,3 +1,9 @@
+export type UnionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
 export type KeysMatching<T, V> = {
   [K in keyof T]-?: T[K] extends V ? K : never;
 }[keyof T];
@@ -56,22 +62,23 @@ export type PickRequired<T, K extends keyof T> = Id<
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type TypeGuard<T, Input = any, ExtraParams extends [...any[]] = []> = (
+export type TypeGuard<T, Input = any, ExtraParams extends any[] = []> = (
   input: Input,
   ...params: ExtraParams
 ) => input is T extends Input ? T : never;
 
-export type TypeInvariant<
-  T,
-  Input = any,
-  ExtraParams extends [...any[]] = []
-> = (
+export type TypeInvariant<T, Input = any, ExtraParams extends any[] = []> = (
   input: Input,
   ...params: ExtraParams
 ) => asserts input is T extends Input ? T : never;
 
-export type Validator<T, Input = any, ExtraParams extends [...any[]] = []> =
+export type Validator<T, Input = any, ExtraParams extends any[] = []> =
   | TypeGuard<T, Input, ExtraParams>
   | TypeInvariant<T, Input, ExtraParams>;
+
+export type Parser<Output, Input = Output, ExtraParams extends any[] = []> = (
+  input: Input,
+  ...params: ExtraParams
+) => Output;
 
 export const id = <T>(t: T) => t;

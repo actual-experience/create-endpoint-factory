@@ -1,0 +1,298 @@
+---
+sidebar_position: 1
+description: The function used to create endpoints.
+toc_max_heading_level: 4
+---
+
+# Factory
+
+An endpoint factory is the pre-configured function used to create each [endpoint](./endpoint). It is returned from `createEndpointFactory`.
+
+```ts no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+```
+
+## Configuration
+
+The factory can be configured for settings that should apply to all endpoints created with it.
+
+### Error serialisation
+
+By default, thrown (uncaught) errors will be serialised using [`miniSerializeError`](/exports#miniserializeerror), before being sent via `res.json()`.
+
+However, you may want to customise the serialisation of errors before they're sent. This is possible using the `serializeError` option when calling `createEndpointFactory`, and will affect all endpoints created with the factory returned.
+
+```ts no-transpile
+import {
+  createEndpointFactory,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
+
+export class MyCustomError extends Error {
+  isCustom = true;
+}
+
+export const createEndpoint = createEndpointFactory({
+  serializeError: (err) => {
+    if (err instanceof MyCustomError) {
+      return { customError: true, ...miniSerializeError(err) };
+    }
+    return miniSerializeError(err);
+  },
+});
+```
+
+#### Errors with HTTP codes
+
+Errors thrown with `failWithCode` will be instances of the [`ResError`](/exports#reserror) subclass, which is exported from CEF.
+
+`ResError` (and by extension, `failWithCode`) accepts a third parameter, `meta`, which is exposed as a public field. This can be used in a custom serialisation function<span className="ts-only">, though will always be typed as `unknown`</span>.
+
+```ts
+import {
+  createEndpointFactory,
+  ResError,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
+
+const isToastable = (
+  meta: unknown
+): meta is { isToastable: true; toastMsg: string } =>
+  typeof meta === 'object' && !!meta && 'isToastable' in meta;
+
+export const createEndpoint = createEndpointFactory({
+  serializeError: (err: unknown) => {
+    if (err instanceof ResError) {
+      return {
+        ...miniSerializeError(err),
+        ...(isToastable(err.meta) && {
+          isToastable: true,
+          toastMsg: err.meta.toastMsg,
+        }),
+      };
+    }
+    return miniSerializeError(err);
+  },
+});
+
+export const endpoint = createEndpoint({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { failWithCode }) => {
+        throw failWithCode(404, 'this message is internal', {
+          isToastable: true,
+          toastMsg: 'This message is toastable!',
+        });
+      },
+    }),
+  }),
+});
+```
+
+Alternatively, you can create your own subclass of ResError.
+
+```ts title="Custom error example" collapsible
+import {
+  createEndpointFactory,
+  ResError,
+  miniSerializeError,
+} from 'next-create-endpoint-factory';
+
+export class ToastableError extends ResError {
+  isToastable = true;
+  constructor(code: number, errorMsg: string, public toastMsg: string) {
+    super(code, errorMsg);
+  }
+}
+
+export const createEndpoint = createEndpointFactory({
+  serializeError: (err) => {
+    if (err instanceof ToastableError) {
+      return {
+        ...miniSerializeError(err),
+        toastMsg: err.toastMsg,
+        isToastable: true,
+      };
+    }
+    return miniSerializeError(err);
+  },
+});
+
+export const endpoint = createEndpoint({
+  methods: (method) => ({
+    get: method({
+      handler: () => {
+        throw new ToastableError(
+          404,
+          'this message is internal',
+          'This message is toastable!'
+        );
+      },
+    }),
+  }),
+});
+```
+
+### Authentication
+
+It's a common use case to authenticate a request before processing it. This is done in CEF by providing an `authenticate` callback, which receives the current `request` and checks it before running the final handler.
+
+If the `authenticate` callback returns any data, it's provided to the method's handler as `authentication` in the `handlerApi` object.
+
+The callback receives `failWithCode` as its second argument, enabling it to throw any relevant [errors with an HTTP code](./method#custom-codes).
+
+```ts no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithAuth = createEndpointFactory({
+  authenticate: (req, failWithCode) => {
+    if (!req.headers.Authentication) {
+      throw failWithCode(401, 'Unauthorized request');
+    }
+    return req.headers.Authentication;
+  },
+});
+
+export const endpoint = createEndpointWithAuth({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { authentication }) => {
+        console.log(authentication); // same as req.headers.Authentication
+      },
+    }),
+  }),
+});
+```
+
+:::tip
+Some libraries prefer to do this with [decorators](./endpoint#handler-decoration) instead.
+There's currently no supported way to decorate all endpoints from a factory, so this would need to be done per endpoint.
+:::
+
+#### Disabling authentication for an endpoint
+
+If an individual [endpoint](./endpoint) should skip the authentication step, you can set the `disableAuthentication` key when creating it.
+
+```ts no-transpile title="Endpoint with disabled authentication"
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithAuth = createEndpointFactory({
+  authenticate: (req, failWithCode) => {
+    if (!req.headers.Authentication) {
+      throw failWithCode(401, 'Unauthorized request');
+    }
+    return req.headers.Authentication;
+  },
+});
+
+export const endpoint = createEndpointWithAuth({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { authentication }) => {
+        console.log(authentication); // undefined
+      },
+    }),
+  }),
+  // highlight-next-line
+  disableAuthentication: true,
+});
+```
+
+### Extra information
+
+Sometimes it's desired to have additional information available to each handler, that might be derived from the original request. This is possible using the `extraApi` option when calling `createEndpointFactory`.
+
+You can provide a callback that receives the current request (and optionally some [configuration](#configuration-per-handler)) and returns a value that will be made available as `extra` in the `handlerApi` object.
+
+```ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithExtra = createEndpointFactory({
+  extraApi: (req) => {
+    const extra: { square?: number } = {};
+    if (typeof req.query.num === 'string') {
+      const num = parseInt(req.query.num);
+      extra.square = num ** 2;
+    }
+    return extra;
+  },
+});
+
+export const endpoint = createEndpointWithExtra({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { extra }) => {
+        console.log(extra.square); // number or undefined
+      },
+    }),
+  }),
+});
+```
+
+:::tip
+You don't have to be deriving anything from the request - you may just want to do some dependency injection, similar to a [thunk middleware with an extra argument](https://redux.js.org/usage/writing-logic-thunks#injecting-config-values-into-thunks).
+
+```ts title="Injecting a Sequelize instance" no-transpile
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import { sequelize } from './sequelize';
+
+export const createEndpointWithSequelize = createEndpointFactory({
+  // highlight-next-line
+  extraApi: () => ({ sequelize }), // sequelize instance now available as extra.sequelize
+});
+```
+
+:::
+
+#### Configuration per handler
+
+It may be useful to provide options to your `extraApi` callback to affect what the final `extra` value will include. This is possible by setting an `extraOptions` option when creating a `method` definition.
+
+The options will be passed as the second argument to the `extraApi` callback.
+
+```ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpointWithExtra = createEndpointFactory({
+  extraApi: (
+    req,
+    // highlight-next-line
+    { includeSquare = true }: { includeSquare?: boolean } = {}
+  ) => {
+    const extra: { square?: number } = {};
+    if (includeSquare && typeof req.query.num === 'string') {
+      const num = parseInt(req.query.num);
+      extra.square = num ** 2;
+    }
+    return extra;
+  },
+});
+
+export const endpoint = createEndpointWithExtra({
+  methods: (method) => ({
+    get: method({
+      handler: (req, res, { extra }) => {
+        console.log(extra.square); // number or undefined
+      },
+      // highlight-next-line
+      extraOptions: { includeSquare: true },
+    }),
+  }),
+});
+```
+
+<div className="ts-only">
+
+:::info
+`extraOptions` is optional if the `extraApi` callback's second parameter is optional/potentially undefined.
+:::
+
+:::caution
+There's no way to change `extra`'s type dynamically - if a property is optionally included, it will still be marked as potentially undefined even if the options guarantee it exists.
+
+It's up to you whether to handle this with a standard null check or with type assertions.
+:::
+
+</div>

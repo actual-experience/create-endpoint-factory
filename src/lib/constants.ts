@@ -29,7 +29,7 @@ export const isNothing = (val: unknown): val is Nothing => val === nothing;
 
 export type NothingToAny<T> = T extends Nothing ? any : T;
 
-const httpMethods = [
+export const httpMethods = [
   'GET',
   'HEAD',
   'POST',
@@ -86,6 +86,8 @@ export class ResError extends Error {
 }
 
 export const failWithCode = wrapConstructor(ResError);
+
+export type FailWithCode = typeof failWithCode;
 
 /**
  * Used to return a success response with a given code.

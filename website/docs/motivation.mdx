@@ -1,0 +1,352 @@
+---
+sidebar_position: 2
+---
+
+# Motivation
+
+NextJS provides no “official” way to handle requests on a method basis, and the response can only be typed as a combination of all the possible return values, meaning it’s much easier to accidentally write unreliable code and return an unintended result for a request (as there is no way to prevent accidentally returning the response for a `GET` in a `POST` request, for example).
+
+### In-depth comparison
+
+A NextJS handler for a REST endpoint (e.g. `api/book/:id`) could be implemented as below: (using Zod for schema validation and Sequelize for database interaction)
+
+```tsx title="Base NextJS example" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
+export type Tokens = { tokens: true };
+export declare function getAuthTokens(headers: any): Tokens;
+
+// file: src/server/books.ts noEmit
+import type { NextApiRequest } from 'next';
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from 'sequelize';
+
+export class Book extends Model<
+  InferAttributes<Book>,
+  InferCreationAttributes<Book>
+> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+  declare author: string;
+}
+
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+
+// file: pages/api/book/[id].ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import z from 'zod';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
+
+const UpdateRequestSchema = z.object({
+  name: z.string().optional(),
+  author: z.string().optional(),
+});
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<{ book: Book } | { edited: boolean } | { error: string }>
+) {
+  // highlight-start
+  // authenticate
+  // needs to be manually included for each API route or made into a wrapper like `withAuth(handler)`
+  let tokens: Tokens;
+  try {
+    tokens = getAuthTokens(req.headers);
+    if (!tokens) {
+      throw new Error('invalid tokens');
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(401).json({ error: 'Failed to authenticate' });
+  }
+  // highlight-end
+  // process the request
+  try {
+    const book = await getBookFromReq(req); // reusable util
+    if (!book) {
+      return res.status(404).json({ error: 'No book found' });
+    }
+    if (req.method === 'GET') {
+      if (Math.random() > 0.5) {
+        // error-start
+        // this is the wrong response but typescript doesn't know that
+        return res.status(200).json({ edited: true });
+        // error-end
+      }
+      return res.status(200).json({ book });
+    } else if (req.method === 'PUT') {
+      const parseResult = UpdateRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        console.error(parseResult.error);
+        return res.status(400).json({ error: 'Invalid body provided' });
+      }
+      const { data } = parseResult;
+      await book.update(data);
+      return res.status(200).json({ edited: true });
+    } else if (req.method === 'DELETE') {
+      await book.destroy();
+      return res.status(204).end();
+    } else {
+      // highlight-start
+      // handle unrecognised methods (and OPTIONS requests)
+      // again, needs to be manually included in each route
+      res.setHeader('Allow', 'GET,PUT,DELETE');
+      return res.status(req.method === 'OPTIONS' ? 204 : 405).end();
+      // highlight-end
+    }
+  } catch (err) {
+    // highlight-start
+    // catch any uncaught errors and ensure error response is consistent
+    console.error(err);
+    res.status(500).json({ error: 'something went wrong' });
+    // highlight-end
+  }
+}
+```
+
+As highlighted above, this has multiple pitfalls.
+
+- Type safety isn't as good as it could be, as there's no way for Typescript to know which responses are allowed per method
+- Authentication needs to be included for each API route.
+- The handler needs to know how to handle an unrecognised method, which is easily forgotten.
+- If it's desired for all uncaught requests to be reformatted to match the normal error format, this needs to be done manually.
+
+The Typescript concerns can be somewhat alleviated by moving each method to its own mini handler, which then get called accordingly by a switch case:
+
+```ts title="Second attempt, with switch case and individual handlers" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
+export type Tokens = { tokens: true };
+export declare function getAuthTokens(headers: any): Tokens;
+
+// file: src/server/books.ts noEmit
+import type { NextApiRequest } from 'next';
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from 'sequelize';
+
+export class Book extends Model<
+  InferAttributes<Book>,
+  InferCreationAttributes<Book>
+> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+  declare author: string;
+}
+
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+
+// file: pages/api/book/[id].ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import z from 'zod';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
+
+const getHandler = (
+  req: NextApiRequest,
+  res: NextApiResponse<{ book: Book }>,
+  tokens: Tokens,
+  book: Book
+) => {
+  if (Math.random() > 0.5) {
+    // success-start
+    // this will now error, yay!
+    // @ts-expect-error
+    return res.status(200).json({ edited: true });
+    // success-end
+  }
+  return res.status(200).json({ book });
+};
+
+const UpdateRequestSchema = z.object({
+  name: z.string().optional(),
+  author: z.string().optional(),
+});
+
+const putHandler = async (
+  req: NextApiRequest,
+  res: NextApiResponse<{ edited: boolean } | { error: string }>,
+  tokens: Tokens,
+  book: Book
+) => {
+  const parseResult = UpdateRequestSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    console.error(parseResult.error);
+    return res.status(400).json({ error: 'Invalid body provided' });
+  }
+  const { data } = parseResult;
+  await book.update(data);
+  return res.status(200).json({ edited: true });
+};
+
+const deleteHandler = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  tokens: Tokens,
+  book: Book
+) => {
+  await book.destroy();
+  return res.status(204).end();
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  // highlight-start
+  // authenticate
+  // still needs to be manually included for each API route or made into a wrapper like `withAuth(handler)`
+  let tokens: Tokens;
+  try {
+    tokens = getAuthTokens(req.headers);
+    if (!tokens) {
+      throw new Error('invalid tokens');
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(401).json({ error: 'Failed to authenticate' });
+  }
+  // highlight-end
+  // process the request
+  try {
+    const book = await getBookFromReq(req); // reusable util
+    if (!book) {
+      return res.status(404).json({ error: 'No book found' });
+    }
+    switch (req.method) {
+      case 'GET':
+        return getHandler(req, res, tokens, book);
+      case 'PUT':
+        return putHandler(req, res, tokens, book);
+      case 'DELETE':
+        return deleteHandler(req, res, tokens, book);
+      default: {
+        // highlight-start
+        // handle unrecognised methods (and OPTIONS requests)
+        // still needs to be manually included in each route
+        res.setHeader('Allow', 'GET,PUT,DELETE');
+        return res.status(req.method === 'OPTIONS' ? 204 : 405).end();
+        // highlight-end
+      }
+    }
+  } catch (err) {
+    // highlight-start
+    // catch any uncaught errors and ensure error response is consistent
+    console.error(err);
+    res.status(500).json({ error: 'something went wrong' });
+    // highlight-end
+  }
+}
+```
+
+This resolves concerns around types, however there's still a lot of code to remember to include in each route. In fact, this approach requires _more_ code than the basic example above!
+
+We still need to include authentication, handle unsupported methods, and ensure uncaught errors match our desired error format.
+
+CEF allows us to address all of these, and more.
+
+```ts title="With Create Endpoint Factory" collapsible showLineNumbers
+// file: src/server/auth.ts noEmit
+export type Tokens = { tokens: true };
+export declare function getAuthTokens(headers: any): Tokens;
+
+// file: src/server/books.ts noEmit
+import type { NextApiRequest } from 'next';
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+} from 'sequelize';
+
+export class Book extends Model<
+  InferAttributes<Book>,
+  InferCreationAttributes<Book>
+> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+  declare author: string;
+}
+
+export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+
+// file: src/server/index.ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import { getAuthTokens } from './auth';
+
+export const createEndpoint = createEndpointFactory({
+  // success-start
+  // one time setup of authentication
+  // will apply to all endpoints made with `createEndpoint` except those with `disableAuthentication` set
+  authenticate: async (req) => {
+    const tokens = await getAuthTokens(req);
+    if (!tokens) {
+      throw new Error('No tokens found');
+    }
+    return tokens;
+  },
+  // success-end
+});
+
+// file: pages/api/book/[id].ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import z from 'zod';
+import { createEndpoint } from '../../../src/server';
+import type { Tokens } from '../../../src/server/auth';
+import { getAuthTokens } from '../../../src/server/auth';
+import type { Book } from '../../../src/server/books';
+import { getBookFromReq } from '../../../src/server/books';
+
+const UpdateRequestSchema = z.object({
+  name: z.string().optional(),
+  author: z.string().optional(),
+});
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    get: method<{ book: Book }>({
+      // @ts-expect-error
+      handler: async (req) => {
+        const book = await getBookFromReq(req);
+        if (Math.random() > 0.5) {
+          // success-start
+          // this still causes an error
+          return { edited: true };
+          // success-end
+        }
+        return { book };
+      },
+    }),
+    put: method({
+      handler: async (req, res, { failWithCode }) => {
+        const book = await getBookFromReq(req);
+        const parseResult = UpdateRequestSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          throw failWithCode(400, 'invalid body');
+        }
+        await book.update(parseResult.data);
+        return { edited: true };
+      },
+    }),
+    delete: method<void>({
+      handler: async (req) => {
+        const book = await getBookFromReq(req);
+        await book.destroy();
+        // status code is automatically 204 since we didn't return
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```

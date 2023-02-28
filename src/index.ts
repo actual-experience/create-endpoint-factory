@@ -1,4 +1,12 @@
 export { createEndpointFactory } from './lib/define';
-export { miniSerializeError, alwaysMatch } from './lib/utils';
+export { miniSerializeError, decorateHandler } from './lib/utils';
 export type { SerializedError } from './lib/utils';
-export { ResError, nothing, isNothing } from './lib/constants';
+export type {
+  TypeGuard,
+  TypeInvariant,
+  Validator,
+  Parser,
+} from './lib/utils/types';
+export { ResError, nothing } from './lib/constants';
+export type { FailWithCode } from './lib/constants';
+export type { GenericsFromHandler, Decorator } from './lib/types';

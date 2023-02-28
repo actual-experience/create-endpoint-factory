@@ -1,0 +1,134 @@
+---
+sidebar_position: 4
+---
+
+# Exports
+
+## `createEndpointFactory`
+
+The main export from CEF, used to create an [endpoint factory](/concepts/factory).
+
+## Utilities
+
+### `ResError`
+
+The `Error` subclass used by CEF to indicate an error has an associated HTTP code that should be used.
+
+You can extend this to create custom errors that can be used in a custom [error serialisation](/concepts/factory#errors-with-http-codes) function, with the ability to have associated HTTP codes.
+
+### `miniSerializeError`
+
+The default [error serialisation](/concepts/factory#error-serialisation) function used for uncaught errors, from Redux Toolkit. See [RTK Docs](https://redux-toolkit.js.org/api/other-exports#miniserializeerror) for more details on how it works.
+
+### `nothing`
+
+A unique value that a handler should return indicate that it has completed, and CEF shouldn't conduct its [usual response handling](/concepts/method#disabling-default-response-handling).
+
+### `decorateHandler`
+
+A utility for [decorating](/concepts/endpoint#handler-decoration) NextJS handlers.
+
+```ts no-transpile
+decorateHandler(handler, withFoo, withBar);
+```
+
+## Types
+
+### `SerializedError`
+
+The return from [`miniSerializeError`](#miniserializeerror). See [RTK Docs](https://redux-toolkit.js.org/api/other-exports#miniserializeerror) for more details.
+
+### `TypeGuard`
+
+Describes a [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that receives an input, and returns true if the input is that value.
+
+```ts no-transpile
+type MyGuard = TypeGuard<{ foo: true }, object, [secondParam: string]>;
+```
+
+is equivalent to
+
+```ts no-transpile
+type MyGuard = (input: object, secondParam: string) => input is { foo: true };
+```
+
+### `TypeInvariant`
+
+Describes an invariant [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that receives an input, and throws an error if the input is not that value.
+
+```ts no-transpile
+type MyInvariant = TypeInvariant<{ foo: true }, object, [secondParam: string]>;
+```
+
+is equivalent to
+
+```ts no-transpile
+type MyInvariant = (
+  input: object,
+  secondParam: string
+) => asserts input is { foo: true };
+```
+
+### `Validator`
+
+Describes a union of [`TypeGuard`](#TypeGuard) and [`TypeInvariant`](#TypeInvariant).
+
+```ts no-transpile
+type MyValidator = Validator<{ foo: true }, object, [secondParam: string]>;
+```
+
+is equivalent to
+
+```ts no-transpile
+type MyValidator =
+  | ((input: object, secondParam: string) => input is { foo: true })
+  | ((input: object, secondParam: string) => asserts input is { foo: true });
+```
+
+### `Parser`
+
+Describes a function which takes an input and returns a value, possibly of a new type.
+
+```ts no-transpile
+type MyParser = Parser<{ foo: true }, object, [secondParam: string]>;
+```
+
+is equivalent to
+
+```ts no-transpile
+type MyValidator = (input: object, secondParam: string) => { foo: true };
+```
+
+### `FailWithCode`
+
+Describes the `failWithCode` function passed to relevant CEF callbacks.
+:::tip
+This accepts the same parameters as [`ResError`](#reserror)'s constructor - it just doesn't need the `new` keyword.
+:::
+
+### `GenericsFromHandler`
+
+A utility type for extracting types from an endpoint's handler.
+
+```ts no-transpile
+type Generics = GenericsFromHandler<typeof endpoint.handler>;
+
+const result = (await res.json()) as Generics['return'];
+```
+
+### `Decorator`
+
+Describes a [decorator](/concepts/endpoint#handler-decoration). Can specify a custom return type which will be reflected in final handler.
+
+```ts no-transpile
+const withFoo: Decorator<{ foo: true }> = (handler) => (req, res) => {
+  if (req.body.foo) {
+    return res.status(200).json({ foo: true });
+  }
+  return handler(req, res);
+};
+```
+
+:::caution
+To avoid pollution of the type, decorators which use a return type of `any` will not be reflected in the final return type.
+:::

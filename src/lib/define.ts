@@ -1,10 +1,10 @@
-// this code should only ever be executed in node, so this **should** be fine to use
-import assert from 'assert/strict';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { HttpMethod } from './constants';
+import { httpMethods } from './constants';
 import { executeDefinition } from './execute';
 import type {
   CreateExtraApi,
+  Decorator,
   EndpointConfig,
   EndpointDefinition,
   EndpointFactoryConfig,
@@ -13,6 +13,7 @@ import type {
   MethodDefinitions,
 } from './types';
 import type { SerializedError } from './utils';
+import { assert, decorateHandler } from './utils';
 import type { ConditionalBool, KeysMatching } from './utils/types';
 import { id } from './utils/types';
 
@@ -32,11 +33,11 @@ import { id } from './utils/types';
  *
  * // api/books/
  * export default createEndpoint({
- *   methods: (build) => ({
- *     get: build.method<{ books: Book[] }>({
+ *   methods: (method) =>({
+ *     get: method<{ books: Book[] }>({
  *       handler: async () => ({ books: await Book.findAll() }),
  *     }),
- *     post: build.method<{ id: EntityId }>({
+ *     post: method<{ id: EntityId }>({
  *       handler: async (req, res, { failWithCode, succeedWithCode }) => {
  *         const parseResult = BookSchema.safeParse(req.body);
  *         if (!parseResult.success) {
@@ -52,11 +53,11 @@ import { id } from './utils/types';
  *
  * // api/books/:id
  * export default createEndpoint({
- *   methods: (build) => ({
- *     get: build.method<Book>({
+ *   methods: (method) =>({
+ *     get: method<Book>({
  *       handler: async (req, res, { failWithCode }) => await getBookFromReq(req),
  *     }),
- *     patch: build.method<void>({
+ *     patch: method<void>({
  *       handler: async (req, res, { failWithCode }) => {
  *         const book = await getBookFromReq(req);
  *         const parseResult = BookSchema.partial().safeParse(req.body);
@@ -67,7 +68,7 @@ import { id } from './utils/types';
  *         // we don't return anything, so code is automatically 204
  *       },
  *     }),
- *     delete: build.method<void>({
+ *     delete: method<void>({
  *       handler: async (req) => {
  *         const book = await getBookFromReq(req);
  *         await book.delete();
@@ -78,8 +79,8 @@ import { id } from './utils/types';
  *
  * // api/auth/token
  * export default createEndpoint({
- *   methods: (build) => ({
- *    post: build.method<{ token: string }>({
+ *   methods: (method) =>({
+ *    post: method<{ token: string }>({
  *      handler: async (req, res, { failWithCode }) => {
  *        const parseResult = BodySchema.safeParse(req.body);
  *        if (!parseResult.success) {
@@ -139,14 +140,16 @@ export const createEndpointFactory = <
           ExtraApi
         >
       | undefined = undefined,
-    DisableAuthentication extends boolean = false
+    DisableAuthentication extends boolean = false,
+    Decorators extends Decorator[] = []
   >(
     endpointConfig: EndpointConfig<
       Definitions,
       Default,
       DisableAuthentication,
       Authentication,
-      ExtraApi
+      ExtraApi,
+      Decorators
     >
   ) => {
     assert(
@@ -158,6 +161,7 @@ export const createEndpointFactory = <
       methods: buildMethods,
       default: buildDefault,
       disableAuthentication = false as DisableAuthentication,
+      decorators = [],
     } = endpointConfig;
 
     assert(
@@ -173,12 +177,16 @@ export const createEndpointFactory = <
       `\`disableAuthentication\` must be a boolean, received ${typeof disableAuthentication}`
     );
 
-    const builder: MethodBuilder<
+    const builder = ((definition) => {
+      // builder<ReturnType>()({ parsers, handler })
+      if (!definition) {
+        return builder;
+      }
+      return definition;
+    }) as MethodBuilder<
       ConditionalBool<DisableAuthentication, undefined, Authentication>,
       ExtraApi
-    > = {
-      method: (definition) => definition,
-    };
+    >;
 
     const methodDefinitions = buildMethods(builder);
     assert(
@@ -209,6 +217,13 @@ export const createEndpointFactory = <
         : ''
     );
 
+    const supportedMethods = httpMethods.filter(
+      (method) =>
+        typeof methodDefinitions[
+          method.toLowerCase() as Lowercase<Exclude<typeof method, 'OPTIONS'>>
+        ] !== 'undefined'
+    );
+
     const defaultDefinition = buildDefault?.(builder);
     assert(
       typeof buildDefault === 'undefined' ||
@@ -221,30 +236,44 @@ export const createEndpointFactory = <
         Object.entries(methodDefinitions).map(([key, definition]) => [
           key,
           definition &&
-            ((req: NextApiRequest, res: NextApiResponse) =>
-              executeDefinition(
-                config,
-                definition,
-                disableAuthentication,
-                req,
-                res
-              )),
+            decorateHandler(
+              (req: NextApiRequest, res: NextApiResponse) =>
+                executeDefinition(
+                  config,
+                  definition,
+                  disableAuthentication,
+                  req,
+                  res
+                ),
+              ...decorators
+            ),
         ])
       ),
       ...(defaultDefinition && {
-        default: (req: NextApiRequest, res: NextApiResponse) =>
-          executeDefinition(
-            config,
-            defaultDefinition,
-            disableAuthentication,
-            req,
-            res
-          ),
+        default: decorateHandler(
+          (req: NextApiRequest, res: NextApiResponse) =>
+            executeDefinition(
+              config,
+              defaultDefinition,
+              disableAuthentication,
+              req,
+              res
+            ),
+          ...decorators
+        ),
       }),
-      handler: async (req, res) => {
+      handler: decorateHandler(async (req, res) => {
         const { method = '' } = req;
+
+        if (method === 'OPTIONS') {
+          res.setHeader('Allow', supportedMethods.join(','));
+          return res.status(204).end();
+        }
+
         const definition =
-          methodDefinitions[method.toLowerCase() as Lowercase<HttpMethod>];
+          methodDefinitions[
+            method.toLowerCase() as Lowercase<Exclude<HttpMethod, 'OPTIONS'>>
+          ];
         if (definition) {
           return executeDefinition(
             config,
@@ -262,15 +291,10 @@ export const createEndpointFactory = <
             res
           );
         } else {
-          res.setHeader(
-            'Allow',
-            Object.keys(methodDefinitions)
-              .map((method) => method.toUpperCase())
-              .join(',')
-          );
+          res.setHeader('Allow', supportedMethods.join(','));
           return res.status(405).end();
         }
-      },
-    } as EndpointDefinition<Definitions, Default, typeof config>;
+      }, ...decorators),
+    } as EndpointDefinition<Definitions, Default, Decorators, typeof config>;
   };
 };

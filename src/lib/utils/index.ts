@@ -1,3 +1,12 @@
+import type { NextApiHandler } from 'next';
+import type { Decorator, GenericsFromDecorator } from '../types';
+
+export function assert(condition: boolean, error?: string | Error) {
+  if (!condition) {
+    throw error instanceof Error ? error : new Error(error);
+  }
+}
+
 export interface SerializedError {
   name?: string;
   message?: string;
@@ -32,26 +41,6 @@ export const miniSerializeError = (value: unknown): SerializedError => {
   return { message: String(value) };
 };
 
-/**
- * Creates a type guard that always returns true, essentially asserting that the value is the given type.
- * Useful for method definition validators, for example allowing body and query to be inferred from the type guard, while asserting that response should be a given type (since this will be checked from `handler`'s return type)
- * This is necessary as generics cannot be partially inferred (so you couldn't provide the ReturnType as a generic while allowing body to be inferred)
- * @returns Type guard that always returns true, essentially asserting that the value is the given type
- * ```ts
- * build.method({
- *   validators: {
- *     body: (body): body is 'foo' => body === 'foo',
- *     response: alwaysMatch<'bar'>(),
- *   },
- *   handler: () => 'bar' as const,
- * });
- * ```
- */
-export const alwaysMatch =
-  <T>() =>
-  (val: any): val is T =>
-    true;
-
 export type WrappedConstructor<
   Constructor extends new (...args: any[]) => any
 > = (...args: ConstructorParameters<Constructor>) => InstanceType<Constructor>;
@@ -66,3 +55,18 @@ export const wrapConstructor =
   (...args) =>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     new constructor(...args);
+
+export const decorateHandler = <Return, Decorators extends Decorator[]>(
+  handler: NextApiHandler<Return>,
+  ...decorators: Decorators
+): NextApiHandler<
+  Return | GenericsFromDecorator<Decorators[number]>['return']
+> =>
+  decorators.reduceRight((handler, decorator) => decorator(handler), handler);
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export const safeAssign = <T extends {}>(
+  target: T,
+  ...sources: Array<Partial<T>>
+): // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+T => Object.assign(target, ...sources);
