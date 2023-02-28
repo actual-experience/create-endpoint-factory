@@ -278,7 +278,9 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+export declare function getBookFromReq(
+  req: NextApiRequest
+): Promise<Book | undefined>;
 
 // file: src/server/index.ts
 import { createEndpointFactory } from 'next-create-endpoint-factory';
@@ -316,8 +318,13 @@ const endpoint = createEndpoint({
   methods: (method) => ({
     get: method<{ book: Book }>({
       // @ts-expect-error
-      handler: async (_, { req }) => {
+      handler: async ({ req }, { failWithCode }) => {
         const book = await getBookFromReq(req);
+
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
+        }
+
         if (Math.random() > 0.5) {
           // success-start
           // this still causes an error
@@ -327,21 +334,37 @@ const endpoint = createEndpoint({
         return { book };
       },
     }),
-    put: method({
-      handler: async ({ body }, { req, failWithCode }) => {
+    put: method<{ edited: true }>()({
+      // highlight-start
+      // parse request information, which gets passed to handler
+      parsers: {
+        body: (body, failWithCode) => {
+          const parseResult = UpdateRequestSchema.safeParse(body);
+          if (!parseResult.success) {
+            throw failWithCode(400, 'invalid body', {
+              error: parseResult.error,
+            });
+          }
+          return parseResult.data;
+        },
+      },
+      // highlight-end
+      handler: async ({ req, body }, { failWithCode }) => {
         const book = await getBookFromReq(req);
-        const parseResult = UpdateRequestSchema.safeParse(body);
-        if (!parseResult.success) {
-          throw failWithCode(400, 'invalid body');
+
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
         }
-        await book.update(parseResult.data);
+
+        await book.update(body);
+
         return { edited: true };
       },
     }),
     delete: method<void>({
-      handler: async (_, { req }) => {
+      handler: async ({ req }) => {
         const book = await getBookFromReq(req);
-        await book.destroy();
+        await book?.destroy();
         // status code is automatically 204 since we didn't return
       },
     }),

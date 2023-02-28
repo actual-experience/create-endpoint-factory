@@ -80,7 +80,7 @@ export const createEndpoint = createEndpointFactory({
 export const endpoint = createEndpoint({
   methods: (method) => ({
     get: method({
-      handler: (_, { failWithCode }) => {
+      handler: (data, { failWithCode }) => {
         throw failWithCode(404, 'this message is internal', {
           isToastable: true,
           toastMsg: 'This message is toastable!',

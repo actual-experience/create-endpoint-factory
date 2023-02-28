@@ -43,9 +43,9 @@ export type HandlerData<
   /** The original request object */
   req: NextApiRequest;
   /** Request body, parsed with parsers.body */
-  body: NoInfer<Body>;
+  body: Body;
   /** Request query, parsed with parsers.query */
-  query: NoInfer<Query>;
+  query: Query;
   /**
    * Returned value from authentication function.
    *
@@ -119,8 +119,13 @@ export type MethodDefinition<
    * Handles the request and return the specified data.
    */
   handler: (
-    data: HandlerData<Body, Query, Authentication, ExtraApi>,
-    api: HandlerApi<ReturnType>
+    data: HandlerData<
+      NoInfer<Body>,
+      NoInfer<Query>,
+      NoInfer<Authentication>,
+      NoInfer<ExtraApi>
+    >,
+    api: HandlerApi<NoInfer<ReturnType>>
   ) => MaybePromise<
     NoInfer<ReturnType> | ResSuccess<NoInfer<ReturnType>> | ResError
   >;

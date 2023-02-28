@@ -38,53 +38,6 @@ decorateHandler(handler, withFoo, withBar);
 
 The return from [`miniSerializeError`](#miniserializeerror). See [RTK Docs](https://redux-toolkit.js.org/api/other-exports#miniserializeerror) for more details.
 
-### `TypeGuard`
-
-Describes a [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that receives an input, and returns true if the input is that value.
-
-```ts no-transpile
-type MyGuard = TypeGuard<{ foo: true }, object, [secondParam: string]>;
-```
-
-is equivalent to
-
-```ts no-transpile
-type MyGuard = (input: object, secondParam: string) => input is { foo: true };
-```
-
-### `TypeInvariant`
-
-Describes an invariant [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that receives an input, and throws an error if the input is not that value.
-
-```ts no-transpile
-type MyInvariant = TypeInvariant<{ foo: true }, object, [secondParam: string]>;
-```
-
-is equivalent to
-
-```ts no-transpile
-type MyInvariant = (
-  input: object,
-  secondParam: string
-) => asserts input is { foo: true };
-```
-
-### `Validator`
-
-Describes a union of [`TypeGuard`](#TypeGuard) and [`TypeInvariant`](#TypeInvariant).
-
-```ts no-transpile
-type MyValidator = Validator<{ foo: true }, object, [secondParam: string]>;
-```
-
-is equivalent to
-
-```ts no-transpile
-type MyValidator =
-  | ((input: object, secondParam: string) => input is { foo: true })
-  | ((input: object, secondParam: string) => asserts input is { foo: true });
-```
-
 ### `Parser`
 
 Describes a function which takes an input and returns a value, possibly of a new type.

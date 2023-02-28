@@ -383,14 +383,14 @@ describe('createEndpointFactory', () => {
       handler: createEndpointFactory()({
         methods: (method) => ({
           get: method<typeof nothing>({
-            handler: (_, { res }) => {
+            handler: (data, { res }) => {
               res.status(205);
               res.json('foo');
               return nothing;
             },
           }),
           post: method<typeof nothing>({
-            handler: async (_, { res }) => {
+            handler: async (data, { res }) => {
               res.status(205);
               await pipeline('foo', res);
               return nothing;

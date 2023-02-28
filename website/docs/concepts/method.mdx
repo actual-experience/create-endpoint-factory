@@ -13,7 +13,7 @@ A method definition can be configured to change its behaviour when executed.
 
 ### Handler
 
-The handler defines the main logic used when executing the method. It will be called with the [`request`](https://nextjs.org/docs/api-routes/request-helpers), [`response`](https://nextjs.org/docs/api-routes/response-helpers), and a `handlerApi` object.
+The handler defines the main logic used when executing the method. It will be called with two objects, `handlerData` and `handlerApi`.
 
 It's expected to execute some logic, and optionally return some data. Depending on what the method handler returns, the final [endpoint handler](./endpoint#combined-handler) will send a different status and response:
 
@@ -47,7 +47,7 @@ const endpoint = createEndpoint({
       // highlight-end
     }),
     post: method({
-      // res.status(500).json(serializeError(error));
+      // res.status(500).json(serializeError(new Error('oops!')));
       // highlight-start
       handler: () => {
         throw new Error('oops!');
@@ -62,7 +62,7 @@ export default endpoint.handler;
 
 #### Custom codes
 
-In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (third parameter for handler callback).
+In cases where you want to use a different status code, you can use the `failWithCode` and `succeedWithCode` utilities provided as part of the `handlerApi` object (second parameter for handler callback).
 
 ```ts title="pages/api/foo.ts"
 // file: src/api/index.ts noEmit
@@ -112,7 +112,7 @@ const pipeline = promisify(stream.pipeline);
 const endpoint = createEndpoint({
   methods: (method) => ({
     get: method({
-      handler: (_, { res, failWithCode }) => {
+      handler: (data, { res, failWithCode }) => {
         const response = await fetch(
           'https://w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
         );
@@ -121,7 +121,7 @@ const endpoint = createEndpoint({
         }
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename=dummy.pdf');
-        await pipeline(response.body, res);
+        await pipeline(await response.blob(), res);
         return nothing;
       },
     }),
@@ -131,4 +131,104 @@ const endpoint = createEndpoint({
 export default endpoint.handler;
 ```
 
-<!-- choosing not to document parsing/validation yet due to #3 -->
+### Parsing
+
+To verify and optionally transform parts of the original request, you can provide parsers. These will receive the original data from a request, and are expected to return data that will be passed to the final handler, or throw an error.
+
+Currently, you can provide parsers for `body` and `query`.
+
+```ts title="pages/api/foo.ts"
+// file: src/api/index.ts noEmit
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+
+export const createEndpoint = createEndpointFactory();
+
+// file: pages/api/foo.ts
+
+import { createEndpoint } from '../../src/api';
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    post: method<{ created: true }>()({
+      parsers: {
+        body: (body, failWithCode) => {
+          if (!body) {
+            throw failWithCode(400, 'no body provided');
+          }
+          if (typeof body !== 'string') {
+            throw failWithCode(400, 'invalid body');
+          }
+          return body; // now string
+        },
+      },
+      handler: ({ body }, { failWithCode, succeedWithCode }) => {
+        console.log(body); // typed as string thanks to parser
+        return succeedWithCode(201, { created: true });
+      },
+    }),
+  }),
+});
+
+export default endpoint.handler;
+```
+
+:::caution
+When using Typescript, it's required to use the double call syntax `method<ReturnType>()(definition)` to use parsers.
+
+This allows the `ReturnType` type to be provided explicitly, while inferring the parsed types.
+
+If you're using Javascript, this is not required.
+:::
+
+:::tip
+If you're using a schema library such as [`zod`](https://zod.dev), you may want to create a recipe function to turn a given schema into a parser. For example:
+
+```ts
+import { createEndpointFactory } from 'next-create-endpoint-factory';
+import type { FailWithCode } from 'next-create-endpoint-factory';
+import { z } from 'zod';
+import type { ZodTypeAny } from 'zod';
+
+// highlight-start
+const schemaToParser =
+  <Schema extends z.ZodTypeAny>(
+    schema: Schema,
+    code: number,
+    message: string
+  ) =>
+  (value: unknown, failWithCode: FailWithCode): z.output<Schema> => {
+    const parseResult = schema.safeParse(value);
+    if (!parseResult.success) {
+      throw failWithCode(code, message, { error: parseResult.error });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return parseResult.data;
+  };
+// highlight-end
+
+export const createEndpoint = createEndpointFactory();
+
+const endpoint = createEndpoint({
+  methods: (method) => ({
+    post: method<{ created: true }>()({
+      parsers: {
+        // highlight-start
+        body: schemaToParser(
+          z.string().transform((str) => str.split(',')),
+          400,
+          'Invalid body'
+        ),
+        // highlight-end
+      },
+      handler: ({ body }, { failWithCode, succeedWithCode }) => {
+        console.log(body.length); // typed as string[] thanks to parser
+        return succeedWithCode(201, { created: true });
+      },
+    }),
+  }),
+});
+```
+
+<!-- TODO: work out why the above recipe results in body being typed as `any` -->
+
+:::

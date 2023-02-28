@@ -46,9 +46,7 @@ yarn add next-create-endpoint-factory
   </TabItem>
 </Tabs>
 
-<!---
-TODO: publish to npm
--->
+<!-- TODO: publish to npm -->
 
 ## Setup
 
@@ -110,10 +108,10 @@ const endpoint = createEndpoint({
       },
     }),
     post: method<void>({
-      handler: ({ body }) => {
+      handler: ({ body }, { failWithCode }) => {
         console.log(body);
         if (!body) {
-          throw new Error('no body');
+          throw failWithCode(400, 'no body');
         }
       },
     }),

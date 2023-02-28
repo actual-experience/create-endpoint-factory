@@ -55,7 +55,7 @@ import { id } from './utils/types';
  * export default createEndpoint({
  *   methods: (method) =>({
  *     get: method<Book>({
- *       handler: async (_, { req, failWithCode }) => await getBookFromReq(req),
+ *       handler: async (data, { req, failWithCode }) => await getBookFromReq(req),
  *     }),
  *     patch: method<void>({
  *       handler: async ({ body }, { req, res, failWithCode }) => {
@@ -69,7 +69,7 @@ import { id } from './utils/types';
  *       },
  *     }),
  *     delete: method<void>({
- *       handler: async (_, {req}) => {
+ *       handler: async (data, {req}) => {
  *         const book = await getBookFromReq(req);
  *         await book.delete();
  *       },

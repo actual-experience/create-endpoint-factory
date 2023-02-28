@@ -57,7 +57,7 @@ export const endpoint = createEndpoint({
   // highlight-start
   default: (method) =>
     method({
-      handler: (_, { res, failWithCode }) => {
+      handler: (data, { res, failWithCode }) => {
         res.setHeader('Allow', 'GET');
         throw new failWithCode(405, 'Unrecognised method');
       },
