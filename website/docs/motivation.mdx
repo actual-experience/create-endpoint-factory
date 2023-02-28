@@ -10,7 +10,7 @@ NextJS provides no “official” way to handle requests on a method basis, and 
 
 A NextJS handler for a REST endpoint (e.g. `api/book/:id`) could be implemented as below: (using Zod for schema validation and Sequelize for database interaction)
 
-```tsx title="Base NextJS example" collapsible showLineNumbers
+```tsx title="Base NextJS example" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
@@ -119,7 +119,7 @@ As highlighted above, this has multiple pitfalls.
 
 The Typescript concerns can be somewhat alleviated by moving each method to its own mini handler, which then get called accordingly by a switch case:
 
-```ts title="Second attempt, with switch case and individual handlers" collapsible showLineNumbers
+```ts title="Second attempt, with switch case and individual handlers" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
@@ -255,7 +255,7 @@ We still need to include authentication, handle unsupported methods, and ensure 
 
 CEF allows us to address all of these, and more.
 
-```ts title="With Create Endpoint Factory" collapsible showLineNumbers
+```ts title="With Create Endpoint Factory" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
