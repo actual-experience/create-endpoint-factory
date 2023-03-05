@@ -22,7 +22,7 @@ The default [error serialisation](/concepts/factory#error-serialisation) functio
 
 ### `nothing`
 
-A unique value that a handler should return indicate that it has completed, and CEF shouldn't conduct its [usual response handling](/concepts/method#disabling-default-response-handling).
+A unique value that a handler should return to indicate that it has completed, and CEF shouldn't conduct its [usual response handling](/concepts/method#disabling-default-response-handling).
 
 ### `decorateHandler`
 
@@ -49,7 +49,7 @@ type MyParser = Parser<{ foo: true }, object, [secondParam: string]>;
 is equivalent to
 
 ```ts no-transpile
-type MyValidator = (input: object, secondParam: string) => { foo: true };
+type MyParser = (input: object, secondParam: string) => { foo: true };
 ```
 
 ### `FailWithCode`
