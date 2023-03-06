@@ -76,8 +76,9 @@ export const executeDefinition = async <
     > = {
       req,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: parsers?.body?.(req.body, failWithCode, req) ?? req.body,
-      query: parsers?.query?.(req.query, failWithCode, req) ?? req.query,
+      body: (await parsers?.body?.(req.body, failWithCode, req)) ?? req.body,
+      query:
+        (await parsers?.query?.(req.query, failWithCode, req)) ?? req.query,
       authentication: authentication as ConditionalBool<
         DisableAuthentication,
         undefined,

@@ -18,7 +18,7 @@ const endpoint = createEndpoint({
             z
               .literal('body1')
               .transform((body) => `${body}!` as const)
-              .parse(data),
+              .parseAsync(data),
         },
         handler: ({ body, query }) => {
           expectExactType('body1!' as const)(body);
@@ -39,8 +39,12 @@ const endpoint = createEndpoint({
       patch:
         Math.random() > 0.5
           ? undefined
-          : method<'baz'>({
-              handler: () => 'baz',
+          : method<'baz'>()({
+              handler: ({ body, query }) => {
+                expectUnknown(body);
+                expectExactType<NextApiRequest['query']>({})(query);
+                return 'baz';
+              },
             }),
     };
   },

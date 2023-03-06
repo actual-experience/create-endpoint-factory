@@ -103,12 +103,12 @@ export type MethodDefinition<
    */
   parsers?: {
     body?: Parser<
-      Body,
+      MaybePromise<Body>,
       unknown,
       [failWithCode: FailWithCode, req: NextApiRequest]
     >;
     query?: Parser<
-      Query,
+      MaybePromise<Query>,
       NextApiRequest['query'],
       [failWithCode: FailWithCode, req: NextApiRequest]
     >;
@@ -189,8 +189,8 @@ export type MethodBuilder<
   <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
       ReturnType,
-      Body,
-      Query,
+      IsAny<Body, unknown, Body>,
+      IsAny<Query, NextApiRequest['query'], Query>,
       Authentication,
       ExtraApi
     >
