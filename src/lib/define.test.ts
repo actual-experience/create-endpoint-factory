@@ -212,11 +212,12 @@ describe('createEndpointFactory', () => {
               }
               return body;
             },
-            query: (query, failWithCode): { foo: 'bar' } => {
+            query: async (query, failWithCode) => {
               const { foo } = query;
               if (foo !== 'bar') {
                 throw failWithCode(400, 'Invalid query');
               }
+              await new Promise((resolve) => setTimeout(resolve, 10));
               return { foo };
             },
           },
