@@ -110,6 +110,12 @@ const config = {
         },
         items: [
           {
+            type: 'doc',
+            docId: 'getting-started',
+            position: 'left',
+            label: 'Docs',
+          },
+          {
             href: `https://github.com/${organizationName}/${projectName}`,
             position: 'right',
             className: 'header-github-link',
