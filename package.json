@@ -1,6 +1,6 @@
 {
   "name": "next-create-endpoint-factory",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A utility for creating NextJS API route handlers by method",
   "files": [
     "dist/*"

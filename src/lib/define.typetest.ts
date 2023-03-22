@@ -4,49 +4,51 @@ import type { NextApiHandler, NextApiRequest } from 'next';
 import z from 'zod';
 import { createEndpointFactory, nothing } from '..';
 import type { SerializedError } from './utils';
-import { expectExactType, expectType } from './utils/typetests';
+import { expectExactType, expectType, expectUnknown } from './utils/typetests';
 
 const createEndpoint = createEndpointFactory();
 
 const endpoint = createEndpoint({
-  methods: (method) => ({
-    get: method({
-      parsers: {
-        query: (query) =>
-          z
-            .record(z.coerce.string().transform(() => 'foo' as const))
-            .parse(query),
-      },
-      validators: {
-        body: (body): body is 'body1' => body === 'body1',
-        response: function (response, failWithCode): asserts response is 'foo' {
-          if (response !== 'foo') {
-            throw failWithCode(500, 'invalid response');
-          }
+  methods: (method) => {
+    return {
+      get: method<'foo'>()({
+        parsers: {
+          query: (data) => z.record(z.coerce.string()).parse(data),
+          body: (data) =>
+            z
+              .literal('body1')
+              .transform((body) => `${body}!` as const)
+              .parseAsync(data),
         },
-      },
-      handler: (req) => {
-        expectExactType('body1' as const)(req.body);
-        expectExactType<Record<string, 'foo'>>({})(req.query);
-        return 'foo' as const;
-      },
-    }),
-    put: method<'bar', 'body2'>({
-      handler: (req, res, { authentication }) => {
-        expectExactType('body2' as const)(req.body);
-        expectExactType<NextApiRequest['query']>({})(req.query);
-        expectType<undefined>(authentication);
-        return 'bar' as const;
-      },
-    }),
-    patch:
-      Math.random() > 0.5
-        ? undefined
-        : method<'baz'>({
-            handler: () => 'baz',
-          }),
-  }),
-  default: (method) => method<'baz', 'body3'>({ handler: () => 'baz' }),
+        handler: ({ body, query }) => {
+          expectExactType('body1!' as const)(body);
+          expectExactType<Record<string, string>>({})(query);
+          return 'foo' as const;
+        },
+      }),
+      put: method<'bar'>({
+        // @ts-expect-error parsers not allowed without double call
+        parsers: {},
+        handler: ({ body, query, authentication }) => {
+          expectUnknown(body);
+          expectExactType<NextApiRequest['query']>({})(query);
+          expectType<undefined>(authentication);
+          return 'bar' as const;
+        },
+      }),
+      patch:
+        Math.random() > 0.5
+          ? undefined
+          : method<'baz'>()({
+              handler: ({ body, query }) => {
+                expectUnknown(body);
+                expectExactType<NextApiRequest['query']>({})(query);
+                return 'baz';
+              },
+            }),
+    };
+  },
+  default: (method) => method<'baz'>({ handler: () => 'baz' }),
 });
 
 const defaultHandler: NextApiHandler<'foo' | 'bar' | 'baz' | SerializedError> =
@@ -112,7 +114,7 @@ const badWrappedHandler: NextApiHandler<'foo' | 'qux' | SerializedError> = (
 const endpointWithNothing = createEndpoint({
   methods: (method) => ({
     get: method<typeof nothing>({
-      handler: async (req, res) => {
+      handler: async (data, { res }) => {
         res.send(true); // this shouldn't error because T should be any
         await pipeline('', res);
         return nothing;
@@ -128,7 +130,7 @@ const createEndpointWithAuth = createEndpointFactory({
 const endpointWithAuth = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { authentication }) => {
+      handler: ({ authentication }) => {
         expectType<{ auth: boolean }>(authentication);
       },
     }),
@@ -138,7 +140,7 @@ const endpointWithAuth = createEndpointWithAuth({
 const endpointWithAuthDisabled = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { authentication }) => {
+      handler: ({ authentication }) => {
         expectType<undefined>(authentication);
       },
     }),
@@ -153,7 +155,7 @@ const createEndpointWithExtra = createEndpointFactory({
 const endpointWithExtra = createEndpointWithExtra({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { extra }) => {
+      handler: ({ extra }) => {
         expectExactType({ str: '' })(extra);
       },
       extraOptions: 'foo',
@@ -169,7 +171,7 @@ const createEndpointWithExtraOptional = createEndpointFactory({
 const endpointWithExtraOptional = createEndpointWithExtraOptional({
   methods: (method) => ({
     get: method({
-      handler: (req, res, { extra }) => {
+      handler: ({ extra }) => {
         expectExactType<{ str: string | undefined }>({ str: '' })(extra);
       },
     }),

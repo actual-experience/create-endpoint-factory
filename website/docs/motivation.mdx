@@ -4,13 +4,13 @@ sidebar_position: 2
 
 # Motivation
 
-NextJS provides no “official” way to handle requests on a method basis, and the response can only be typed as a combination of all the possible return values, meaning it’s much easier to accidentally write unreliable code and return an unintended result for a request (as there is no way to prevent accidentally returning the response for a `GET` in a `POST` request, for example).
+NextJS provides no “official” way to handle requests on a method basis (though there are ideas in [beta](https://beta.nextjs.org/docs/routing/route-handlers)). The response can only be typed as a combination of all the possible return values, meaning it’s much easier to accidentally write unreliable code and return an unintended result for a request (as there is no way to prevent accidentally returning the response for a `GET` in a `POST` request, for example).
 
 ### In-depth comparison
 
 A NextJS handler for a REST endpoint (e.g. `api/book/:id`) could be implemented as below: (using Zod for schema validation and Sequelize for database interaction)
 
-```tsx title="Base NextJS example" collapsible showLineNumbers
+```tsx title="Base NextJS example" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
@@ -119,7 +119,7 @@ As highlighted above, this has multiple pitfalls.
 
 The Typescript concerns can be somewhat alleviated by moving each method to its own mini handler, which then get called accordingly by a switch case:
 
-```ts title="Second attempt, with switch case and individual handlers" collapsible showLineNumbers
+```ts title="Second attempt, with switch case and individual handlers" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
@@ -255,7 +255,7 @@ We still need to include authentication, handle unsupported methods, and ensure 
 
 CEF allows us to address all of these, and more.
 
-```ts title="With Create Endpoint Factory" collapsible showLineNumbers
+```ts title="With Create Endpoint Factory" collapsible collapsibleOpen showLineNumbers
 // file: src/server/auth.ts noEmit
 export type Tokens = { tokens: true };
 export declare function getAuthTokens(headers: any): Tokens;
@@ -278,7 +278,9 @@ export class Book extends Model<
   declare author: string;
 }
 
-export declare function getBookFromReq(req: NextApiRequest): Promise<Book>;
+export declare function getBookFromReq(
+  req: NextApiRequest
+): Promise<Book | undefined>;
 
 // file: src/server/index.ts
 import { createEndpointFactory } from 'next-create-endpoint-factory';
@@ -316,8 +318,13 @@ const endpoint = createEndpoint({
   methods: (method) => ({
     get: method<{ book: Book }>({
       // @ts-expect-error
-      handler: async (req) => {
+      handler: async ({ req }, { failWithCode }) => {
         const book = await getBookFromReq(req);
+
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
+        }
+
         if (Math.random() > 0.5) {
           // success-start
           // this still causes an error
@@ -327,21 +334,37 @@ const endpoint = createEndpoint({
         return { book };
       },
     }),
-    put: method({
-      handler: async (req, res, { failWithCode }) => {
+    put: method<{ edited: true }>()({
+      // highlight-start
+      // parse request information, which gets passed to handler
+      parsers: {
+        body: (body, failWithCode) => {
+          const parseResult = UpdateRequestSchema.safeParse(body);
+          if (!parseResult.success) {
+            throw failWithCode(400, 'invalid body', {
+              error: parseResult.error,
+            });
+          }
+          return parseResult.data;
+        },
+      },
+      // highlight-end
+      handler: async ({ req, body }, { failWithCode }) => {
         const book = await getBookFromReq(req);
-        const parseResult = UpdateRequestSchema.safeParse(req.body);
-        if (!parseResult.success) {
-          throw failWithCode(400, 'invalid body');
+
+        if (!book) {
+          throw failWithCode(404, 'Book not found');
         }
-        await book.update(parseResult.data);
+
+        await book.update(body);
+
         return { edited: true };
       },
     }),
     delete: method<void>({
-      handler: async (req) => {
+      handler: async ({ req }) => {
         const book = await getBookFromReq(req);
-        await book.destroy();
+        await book?.destroy();
         // status code is automatically 204 since we didn't return
       },
     }),

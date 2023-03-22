@@ -1,11 +1,9 @@
 import stream from 'stream';
 import { promisify } from 'util';
-import type { NextApiResponse } from 'next';
 import { testApiHandler } from 'next-test-api-route-handler';
 import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
-import { id } from './utils/types';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -15,15 +13,15 @@ describe('createEndpointFactory', () => {
 
     const endpoint = createEndpoint({
       methods: (method) => ({
-        get: method<'foo', any, { foo: 'bar' }>({
+        get: method<'foo'>({
           handler: () => Promise.resolve('foo'),
         }),
-        post: method<'bar', 'baz', { foo: 'bar' }>({
-          handler: (req, res, { succeedWithCode, failWithCode }) => {
-            if (!req.body) {
+        post: method<'bar'>({
+          handler: ({ body }, { succeedWithCode, failWithCode }) => {
+            if (!body) {
               throw new Error('No body provided');
             }
-            if (req.body !== 'baz') {
+            if (body !== 'baz') {
               return failWithCode(400, 'Invalid body');
             }
             return succeedWithCode(201, 'bar');
@@ -36,7 +34,7 @@ describe('createEndpointFactory', () => {
       handler: endpoint.handler,
       params: {
         foo: 'bar',
-      } satisfies GenericsFromHandler<typeof endpoint.handler>['query'],
+      },
       test: async ({ fetch }) => {
         const getRes = await fetch();
         expect(getRes.status).toBe(200);
@@ -46,9 +44,7 @@ describe('createEndpointFactory', () => {
 
         const postRes = await fetch({
           method: 'POST',
-          body: 'baz' satisfies GenericsFromHandler<
-            typeof endpoint.methods.post
-          >['body'],
+          body: 'baz',
         });
         expect(postRes.status).toBe(201);
         expect(await postRes.json()).toBe<
@@ -137,7 +133,7 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Authorized>({
-          handler: (req, res, { authentication }) => {
+          handler: ({ authentication }) => {
             expect(authentication).toEqual({ auth: true });
             return AuthStatus.Authorized;
           },
@@ -179,7 +175,7 @@ describe('createEndpointFactory', () => {
     const endpointWithoutAuth = createEndpoint({
       methods: (method) => ({
         get: method<AuthStatus.Unauthenticated>({
-          handler: (req, res, { authentication }) => {
+          handler: ({ authentication }) => {
             expect(authentication).toEqual(authentication);
             return AuthStatus.Unauthenticated;
           },
@@ -208,7 +204,7 @@ describe('createEndpointFactory', () => {
 
     const endpointWithValidation = createEndpoint({
       methods: (method) => ({
-        post: method<string>({
+        post: method<string>()({
           parsers: {
             body: (body, failWithCode): 'foo' => {
               if (body !== 'foo') {
@@ -216,14 +212,14 @@ describe('createEndpointFactory', () => {
               }
               return body;
             },
-            query: (query, failWithCode): { foo: 'bar' } => {
+            query: async (query, failWithCode) => {
               const { foo } = query;
               if (foo !== 'bar') {
                 throw failWithCode(400, 'Invalid query');
               }
+              await new Promise((resolve) => setTimeout(resolve, 10));
               return { foo };
             },
-            response: (resp) => resp + 'bye',
           },
           handler: () => 'hi',
         }),
@@ -252,16 +248,12 @@ describe('createEndpointFactory', () => {
         expect(
           typeof invalidBodyJson === 'object' && invalidBodyJson.message
         ).toBe('Invalid body');
-
-        const correctRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(correctRes.status).toBe(200);
-        expect(await correctRes.json()).toBe('hibye');
       },
     });
 
     const endpointWithTransforms = createEndpoint({
       methods: (method) => ({
-        post: method({
+        post: method()({
           parsers: {
             body: (body) =>
               z.coerce
@@ -283,11 +275,9 @@ describe('createEndpointFactory', () => {
 
     await testApiHandler({
       handler: endpointWithTransforms.handler,
-      params: id<
-        GenericsFromHandler<typeof endpointWithTransforms.handler>['query']
-      >({
+      params: {
         num: '2',
-      }),
+      },
       test: async ({ fetch }) => {
         const res = await fetch({ method: 'POST', body: 3 });
         expect(await res.json()).toStrictEqual({
@@ -296,57 +286,6 @@ describe('createEndpointFactory', () => {
             num: '4',
           },
         });
-      },
-    });
-  });
-
-  it('should allow for validation of query/body/response using type guards or invariants', async () => {
-    const createEndpoint = createEndpointFactory();
-
-    const endpoint = createEndpoint({
-      methods: (method) => ({
-        post: method({
-          validators: {
-            body: (body): body is 'foo' => body === 'foo',
-            query: (query): query is { foo: 'bar' } => query.foo === 'bar',
-            response: function (
-              response,
-              failWithCode
-            ): asserts response is 'bye' {
-              if (response !== 'bye') {
-                throw failWithCode(404, 'Whoopsie');
-              }
-            },
-          },
-          // @ts-expect-error wrong response
-          handler: () => 'hi',
-        }),
-      }),
-    });
-
-    let useCorrectParams = true;
-    await testApiHandler({
-      handler: endpoint.handler,
-      paramsPatcher: (params) => {
-        params.foo = useCorrectParams ? 'bar' : 'foo';
-      },
-      test: async ({ fetch }) => {
-        useCorrectParams = false;
-        const invalidQueryRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(invalidQueryRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidQueryRes.json()).message).toBe('Invalid query');
-        useCorrectParams = true;
-
-        const invalidBodyRes = await fetch({ method: 'POST', body: 'bar' });
-        expect(invalidBodyRes.status).toBe(400);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidBodyRes.json()).message).toBe('Invalid body');
-
-        const invalidResponseRes = await fetch({ method: 'POST', body: 'foo' });
-        expect(invalidResponseRes.status).toBe(404);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        expect((await invalidResponseRes.json()).message).toBe('Whoopsie');
       },
     });
   });
@@ -376,8 +315,8 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         post: method<'hi'>({
-          handler: (req, res, { failWithCode }) => {
-            if (req.body === 'can retry') {
+          handler: ({ body }, { failWithCode }) => {
+            if (body === 'can retry') {
               throw new Error('try again');
             }
             return failWithCode(400, "don't try again", { doNotRetry: true });
@@ -420,11 +359,11 @@ describe('createEndpointFactory', () => {
     const endpoint = createEndpoint({
       methods: (method) => ({
         get: method<{ hasFoo: boolean }>({
-          handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: ({ extra }) => ({ hasFoo: !!extra.foo }),
           extraOptions: { includeFoo: true },
         }),
         post: method<{ hasFoo: boolean }>({
-          handler: (req, res, { extra }) => ({ hasFoo: !!extra.foo }),
+          handler: ({ extra }) => ({ hasFoo: !!extra.foo }),
         }),
       }),
     });
@@ -445,14 +384,14 @@ describe('createEndpointFactory', () => {
       handler: createEndpointFactory()({
         methods: (method) => ({
           get: method<typeof nothing>({
-            handler: (req, res: NextApiResponse<'foo'>) => {
+            handler: (data, { res }) => {
               res.status(205);
               res.json('foo');
               return nothing;
             },
           }),
           post: method<typeof nothing>({
-            handler: async (req, res) => {
+            handler: async (data, { res }) => {
               res.status(205);
               await pipeline('foo', res);
               return nothing;

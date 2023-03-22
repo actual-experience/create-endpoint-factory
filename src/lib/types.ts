@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import type {
+  FailWithCode,
   HttpMethod,
   NothingToAny,
   ResError,
@@ -14,41 +15,17 @@ import type {
   MaybePromise,
   NoInfer,
   Parser,
-  Validator,
 } from './utils/types';
 
 type ExcludeAny<T> = IsAny<T, never, T>;
 
-export interface CustomizedNextApiRequest<
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query = any
-> extends NextApiRequest {
-  body: Body;
-  query: IsAny<
-    Query,
-    NextApiRequest['query'],
-    Query extends NextApiRequest['query'] ? Query : NextApiRequest['query']
-  >;
-}
-
-export interface CustomizedNextApiHandler<
+export type CustomizedNextApiHandler<
   ReturnType = any,
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query extends NextApiRequest['query'] = NextApiRequest['query'],
   SerializedErrorType = SerializedError,
   DecoratorReturn = any
-> extends NextApiHandler<
-    NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
-  > {
-  /**
-   * "Fake" property to help with extracting types
-   */
-  _body: Body;
-  /**
-   * "Fake" property to help with extracting types
-   */
-  _query: Query;
-}
+> = NextApiHandler<
+  NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
+>;
 
 export type Decorator<ReturnType = any> = (
   handler: NextApiHandler<ReturnType>
@@ -57,11 +34,36 @@ export type Decorator<ReturnType = any> = (
 export type GenericsFromDecorator<Deco extends Decorator> =
   Deco extends Decorator<infer Return> ? { return: Return } : never;
 
-export interface MethodHandlerApi<
-  ReturnType = any,
+export type HandlerData<
+  Body = unknown,
+  Query = NextApiRequest['query'],
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> {
+> = {
+  /** The original request object */
+  req: NextApiRequest;
+  /** Request body, parsed with parsers.body */
+  body: Body;
+  /** Request query, parsed with parsers.query */
+  query: Query;
+  /**
+   * Returned value from authentication function.
+   *
+   * Undefined if authentication is disabled.
+   */
+  authentication: Authentication;
+  /**
+   * Information returned from the `extraApi` function.
+   */
+  extra: ExtraApiReturn<ExtraApi>;
+};
+
+/**
+ * Helpers for the handler response
+ */
+export interface HandlerApi<ReturnType = any> {
+  /** Original response object provided to API route */
+  res: NextApiResponse<NothingToAny<ReturnType>>;
   /**
    * Return a successful response with a specified HTTP code
    * ```js
@@ -83,85 +85,45 @@ export interface MethodHandlerApi<
    * ```
    */
   failWithCode: WrappedConstructor<typeof ResError>;
-  /**
-   * Returned value from authentication function.
-   *
-   * Undefined if authentication is disabled.
-   */
-  authentication: Authentication;
-  /**
-   * Information returned from the `extraApi` function.
-   */
-  extra: ExtraApiReturn<ExtraApi>;
 }
 
 export type MethodDefinition<
   ReturnType = any,
-  Body extends NextApiRequest['body'] = NextApiRequest['body'],
-  Query = any,
+  Body = unknown,
+  Query = NextApiRequest['query'],
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
   /**
-   * Receive the body/query/response and return a validated version of it. Expected to throw errors if invalid type.
+   * Receive the body/query/response and return a parsed version of it. Expected to throw errors if invalid type.
    * If a standard error is thrown, 500 code will be used.
    * Each parser receives `failWithCode` as its second argument, to allow for throwing errors with other HTTP codes.
    *
    * Original request object is passed as third argument.
-   *
-   * **Will be run *before* validators**
    */
   parsers?: {
     body?: Parser<
-      Body,
+      MaybePromise<Body>,
       unknown,
-      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
+      [failWithCode: FailWithCode, req: NextApiRequest]
     >;
     query?: Parser<
-      Query,
+      MaybePromise<Query>,
       NextApiRequest['query'],
-      [failWithCode: MethodHandlerApi['failWithCode'], req: NextApiRequest]
-    >;
-    response?: Parser<
-      unknown,
-      ReturnType,
-      [
-        failWithCode: MethodHandlerApi['failWithCode'],
-        req: NextApiRequest,
-        res: NextApiResponse
-      ]
-    >;
-  };
-  /**
-   * Validate the body/query/response is the correct type, either with a type guard (return true if match, false if not) or an invariant (throw if not match).
-   * If a validator returns false, an error will be thrown (code 400 for body/query, 500 for response).
-   * If a standard error is thrown by a validator, 500 code will be used.
-   * Each validator receives `failWithCode` as its second argument, to allow for throwing errors with other HTTP codes.
-   */
-  validators?: {
-    body?: Validator<
-      Body,
-      NextApiRequest['body'],
-      [failWithCode: MethodHandlerApi['failWithCode']]
-    >;
-    query?: Validator<
-      Query,
-      NextApiRequest['query'],
-      [failWithCode: MethodHandlerApi['failWithCode']]
-    >;
-    response?: Validator<
-      ReturnType,
-      any,
-      [failWithCode: MethodHandlerApi['failWithCode']]
+      [failWithCode: FailWithCode, req: NextApiRequest]
     >;
   };
   /**
    * Handles the request and return the specified data.
    */
   handler: (
-    req: CustomizedNextApiRequest<Body, Query>,
-    res: NextApiResponse<NothingToAny<ReturnType>>,
-    api: MethodHandlerApi<ReturnType, Authentication, ExtraApi>
+    data: HandlerData<
+      NoInfer<Body>,
+      NoInfer<Query>,
+      NoInfer<Authentication>,
+      NoInfer<ExtraApi>
+    >,
+    api: HandlerApi<NoInfer<ReturnType>>
   ) => MaybePromise<
     NoInfer<ReturnType> | ResSuccess<NoInfer<ReturnType>> | ResError
   >;
@@ -195,18 +157,14 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
     : never;
 
 export type GenericsFromHandler<
-  Handler extends CustomizedNextApiHandler<any, any, any, any>
+  Handler extends CustomizedNextApiHandler<any, any, any>
 > = Handler extends CustomizedNextApiHandler<
   infer Return,
-  infer Body,
-  infer Query,
   infer Error,
   infer DecoratorReturn
 >
   ? {
       return: Return;
-      body: Body;
-      query: Query;
       error: Error;
       decoratorReturn: DecoratorReturn;
     }
@@ -228,31 +186,35 @@ export type MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
 > = {
-  <ReturnType = unknown>(): <
-    Body extends NextApiRequest['body'] = NextApiRequest['body'],
-    Query extends NextApiRequest['query'] = NextApiRequest['query']
-  >(
+  <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
       ReturnType,
-      Body,
-      Query,
+      IsAny<Body, unknown, Body>,
+      IsAny<Query, NextApiRequest['query'], Query>,
       Authentication,
       ExtraApi
     >
   ) => typeof definition;
-  <
-    ReturnType = unknown,
-    Body extends NextApiRequest['body'] = NextApiRequest['body'],
-    Query extends NextApiRequest['query'] = NextApiRequest['query']
-  >(
+  <ReturnType = unknown>(
     definition: MethodDefinition<
       ReturnType,
-      Body,
-      Query,
+      unknown,
+      NextApiRequest['query'],
       Authentication,
       ExtraApi
-    >
-  ): typeof definition;
+    > & {
+      /**
+       * Parsers require a double call of the builder, i.e. `method<ReturnType>()({ parsers, handler })`
+       */
+      parsers?: never;
+    }
+  ): MethodDefinition<
+    ReturnType,
+    any,
+    NextApiRequest['query'],
+    Authentication,
+    ExtraApi
+  >;
 };
 
 export type MethodDefinitionToHandler<
@@ -263,19 +225,14 @@ export type MethodDefinitionToHandler<
   ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>
 > = CustomizedNextApiHandler<
   DefGenerics['return'],
-  DefGenerics['body'],
-  DefGenerics['query'],
   ConfGenerics['error'],
   DecorReturn
 >;
 
-export type MethodDefinitions<
-  Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
-> = Partial<
+export type MethodDefinitions = Partial<
   Record<
     Lowercase<Exclude<HttpMethod, 'OPTIONS'>>,
-    MethodDefinition<any, any, any, Authentication, ExtraApi>
+    MethodDefinition<any, any, any, any, CreateExtraApi>
   >
 >;
 
@@ -284,10 +241,16 @@ export type MethodDefinitionsToHandlers<
   Config extends EndpointFactoryConfig,
   DecoReturn = never
 > = {
-  [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition
+  [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition<
+    any,
+    any,
+    any,
+    any,
+    CreateExtraApi
+  >
     ? MethodDefinitionToHandler<Definitions[Method], Config, DecoReturn>
     : [Definitions[Method]] extends [infer Def | undefined]
-    ? Def extends MethodDefinition
+    ? Def extends MethodDefinition<any, any, any, any, CreateExtraApi>
       ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
       : never
     : never;
@@ -326,8 +289,6 @@ export type EndpointDefinition<
     /** Combined handler, which will automatically choose the respective handler (or return 405 if none found) based on the method requested */
     handler: CustomizedNextApiHandler<
       UnionedGenerics['return'],
-      UnionedGenerics['body'],
-      UnionedGenerics['query'],
       ConfGenerics['error'],
       DecoReturn
     >;
@@ -379,7 +340,7 @@ export interface EndpointFactoryConfig<
    */
   authenticate?: (
     req: NextApiRequest,
-    failWithCode: MethodHandlerApi['failWithCode']
+    failWithCode: FailWithCode
   ) => MaybePromise<Authentication>;
   /**
    * Derive extra information about the request, and include it as `extra` in the handlerApi object.
@@ -388,18 +349,9 @@ export interface EndpointFactoryConfig<
 }
 
 export interface EndpointConfig<
-  Definitions extends MethodDefinitions<
-    ConditionalBool<DisableAuthentication, undefined, Authentication>,
-    ExtraApi
-  >,
+  Definitions extends MethodDefinitions,
   Default extends
-    | MethodDefinition<
-        any,
-        any,
-        any,
-        ConditionalBool<DisableAuthentication, undefined, Authentication>,
-        ExtraApi
-      >
+    | MethodDefinition<any, any, any, any, any>
     | undefined = undefined,
   DisableAuthentication extends boolean = false,
   Authentication = any,
