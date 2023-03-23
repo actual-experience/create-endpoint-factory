@@ -84,7 +84,7 @@ See [custom codes](concepts/method#custom-codes) for how to use codes other than
 
 The final combined handler will be attached to the [endpoint instance](/concepts/endpoint). In the vast majority of cases, you'll want to export this as default.
 
-The combined handler receives data about the request and an API for responses, and automatically calls the corresponding handler - if no handler is found for the method, a `405` is sent along with an `Allow` header set to a list of supported methods.
+The combined handler receives the original request and response objects, and automatically calls the corresponding handler with data about the request and an API for responses - if no handler is found for the method, a `405` is sent along with an `Allow` header set to a list of supported methods.
 
 This handler also automatically supports `OPTIONS` requests.
 
