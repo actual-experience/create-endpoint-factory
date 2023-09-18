@@ -47,8 +47,7 @@ export type IsUnknown<T, True, False = never> = unknown extends T
 export type NoInfer<T> = [T][T extends any ? 0 : never];
 
 /** Merge object intersections visually */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type Id<T> = { [K in keyof T]: T[K] } & {};
+export type Id<T> = { [K in keyof T]: T[K] } & unknown;
 
 /** Make specified keys optional */
 export type PickPartial<T, K extends keyof T> = Id<
