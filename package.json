@@ -70,6 +70,9 @@
     "preset": "ts-jest",
     "testEnvironment": "node"
   },
+  "engines": {
+    "node": "^14.15.0 || ^16.10.0 || >=18.0.0"
+  },
   "tsup": {
     "entry": [
       "src/index.ts"
