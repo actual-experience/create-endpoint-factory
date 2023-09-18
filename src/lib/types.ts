@@ -282,25 +282,23 @@ export type EndpointDefinition<
   DecoReturn = Decorators['length'] extends 0
     ? any
     : GenericsFromDecorator<Decorators[number]>['return']
-> = Id<
-  {
-    /** Individual handlers for each method. */
-    methods: MethodDefinitionsToHandlers<Definitions, Config, DecoReturn>;
-    /** Combined handler, which will automatically choose the respective handler (or return 405 if none found) based on the method requested */
-    handler: CustomizedNextApiHandler<
-      UnionedGenerics['return'],
-      ConfGenerics['error'],
-      DecoReturn
-    >;
-  } & (Default extends MethodDefinition
-    ? {
-        /** Catchall handler which will be used if the method doesn't have a specific handler */
-        default: MethodDefinitionToHandler<Default, Config, DecoReturn>;
-      }
-    : // {} disappears in intersections, which we want here
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      {})
->;
+> = {
+  /** Individual handlers for each method. */
+  methods: MethodDefinitionsToHandlers<Definitions, Config, DecoReturn>;
+  /** Combined handler, which will automatically choose the respective handler (or return 405 if none found) based on the method requested */
+  handler: CustomizedNextApiHandler<
+    UnionedGenerics['return'],
+    ConfGenerics['error'],
+    DecoReturn
+  >;
+} & (Default extends MethodDefinition
+  ? {
+      /** Catchall handler which will be used if the method doesn't have a specific handler */
+      default: MethodDefinitionToHandler<Default, Config, DecoReturn>;
+    }
+  : // {} disappears in intersections, which we want here
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    {});
 
 export type CreateExtraApi<Options = any, Return = any> = (
   req: NextApiRequest,
