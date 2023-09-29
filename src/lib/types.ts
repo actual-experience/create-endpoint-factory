@@ -9,7 +9,6 @@ import type {
 import type { SerializedError, WrappedConstructor } from './utils';
 import type {
   ConditionalBool,
-  Id,
   IfMaybeUndefined,
   IsAny,
   MaybePromise,
@@ -43,9 +42,9 @@ export type HandlerData<
   /** The original request object */
   req: NextApiRequest;
   /** Request body, parsed with parsers.body */
-  body: Body;
+  body: IsAny<Body, unknown, Body>;
   /** Request query, parsed with parsers.query */
-  query: Query;
+  query: IsAny<Query, NextApiRequest['query'], Query>;
   /**
    * Returned value from authentication function.
    *
@@ -189,8 +188,8 @@ export type MethodBuilder<
   <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
       ReturnType,
-      IsAny<Body, unknown, Body>,
-      IsAny<Query, NextApiRequest['query'], Query>,
+      Body,
+      Query,
       Authentication,
       ExtraApi
     >
