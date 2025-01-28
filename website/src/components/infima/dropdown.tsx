@@ -1,14 +1,14 @@
-import React from 'react';
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import React from 'react';
 import styles from './dropdown.module.scss';
 
-export type DropdownProps = {
+export interface DropdownProps {
   hoverable?: boolean;
   show?: boolean;
   right?: boolean;
   noCaret?: boolean;
-};
+}
 
 export const Dropdown = makeOverridableComponent<'div', DropdownProps>(
   'Dropdown',
@@ -33,7 +33,7 @@ export const Dropdown = makeOverridableComponent<'div', DropdownProps>(
   )
 );
 
-export type DropdownMenuProps = {};
+export interface DropdownMenuProps {}
 
 export const DropdownMenu = makeOverridableComponent<'ul', DropdownMenuProps>(
   'DropdownMenu',
@@ -42,9 +42,9 @@ export const DropdownMenu = makeOverridableComponent<'ul', DropdownMenuProps>(
   )
 );
 
-export type DropdownLinkProps = {
+export interface DropdownLinkProps {
   active?: boolean;
-};
+}
 
 export const DropdownLink = makeOverridableComponent<
   'button',

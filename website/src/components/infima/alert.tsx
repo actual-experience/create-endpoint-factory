@@ -1,15 +1,13 @@
-import React from 'react';
-import {
-  Colour,
-  makeOverridableComponent,
-} from '@site/src/components/infima/base';
-import { MouseEventHandler } from 'react';
+import type { Colour } from '@site/src/components/infima/base';
+import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import type { MouseEventHandler } from 'react';
+import React from 'react';
 
-export type AlertProps = {
+export interface AlertProps {
   color?: Colour;
   onClose?: MouseEventHandler<HTMLButtonElement>;
-};
+}
 
 export const Alert = makeOverridableComponent<'div', AlertProps>(
   'Alert',

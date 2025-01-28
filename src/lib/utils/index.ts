@@ -42,21 +42,21 @@ export const miniSerializeError = (value: unknown): SerializedError => {
 };
 
 export type WrappedConstructor<
-  Constructor extends new (...args: any[]) => any
+  Constructor extends new (...args: Array<any>) => any,
 > = (...args: ConstructorParameters<Constructor>) => InstanceType<Constructor>;
 
 /**
  * Make a wrapper function that can create an instance without needing to use `new`
  */
 export const wrapConstructor =
-  <Constructor extends new (...args: any[]) => any>(
+  <Constructor extends new (...args: Array<any>) => any>(
     constructor: Constructor
   ): WrappedConstructor<Constructor> =>
   (...args) =>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     new constructor(...args);
 
-export const decorateHandler = <Return, Decorators extends Decorator[]>(
+export const decorateHandler = <Return, Decorators extends Array<Decorator>>(
   handler: NextApiHandler<Return>,
   ...decorators: Decorators
 ): NextApiHandler<

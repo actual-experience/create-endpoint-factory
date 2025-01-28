@@ -1,10 +1,11 @@
 import stream from 'stream';
 import { promisify } from 'util';
 import { testApiHandler } from 'next-test-api-route-handler';
+import type { JestAssertion } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
-import { describe, expect, it, JestAssertion } from 'vitest';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -526,13 +527,15 @@ describe('createEndpointFactory', () => {
   it('should allow passing decorators, and applies from right to left', async () => {
     const withFoo: Decorator<{ caught: 'foo' }> = (handler) => (req, res) => {
       if (req.body === 'foo' || req.body === 'foobar') {
-        return res.json({ caught: 'foo' });
+        res.json({ caught: 'foo' });
+        return;
       }
       return handler(req, res);
     };
     const withBar: Decorator<{ caught: 'bar' }> = (handler) => (req, res) => {
       if (req.body === 'bar' || req.body === 'foobar') {
-        return res.json({ caught: 'bar' });
+        res.json({ caught: 'bar' });
+        return;
       }
       return handler(req, res);
     };

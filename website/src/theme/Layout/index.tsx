@@ -1,8 +1,8 @@
-import React from 'react';
-import Layout from '@theme-original/Layout';
-import type LayoutType from '@theme/Layout';
 import type { WrapperProps } from '@docusaurus/types';
 import { LigatureProvider } from '@site/src/hooks/useCodeLigatures';
+import type LayoutType from '@theme/Layout';
+import Layout from '@theme-original/Layout';
+import React from 'react';
 
 type Props = WrapperProps<typeof LayoutType>;
 
@@ -11,7 +11,7 @@ type Props = WrapperProps<typeof LayoutType>;
   - add LigatureProvider
 */
 
-export default function LayoutWrapper(props: Props): JSX.Element {
+export default function LayoutWrapper(props: Props): React.JSX.Element {
   return (
     <LigatureProvider>
       <Layout {...props} />

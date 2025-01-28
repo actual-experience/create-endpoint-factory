@@ -1,16 +1,17 @@
-import { arrayIncludes, Id } from '@site/src/util/types';
-import clsx, { ClassArray, ClassValue } from 'clsx';
-import React, {
+import type { Id } from '@site/src/util/types';
+import { arrayIncludes } from '@site/src/util/types';
+import type { ClassArray, ClassValue } from 'clsx';
+import clsx from 'clsx';
+import capitalise from 'lodash/capitalize';
+import omit from 'lodash/omit';
+import type {
   ComponentPropsWithoutRef,
   ComponentType,
   ForwardedRef,
-  forwardRef,
   HTMLAttributes,
-  memo,
-  useMemo,
 } from 'react';
-import capitalise from 'lodash/capitalize';
-import omit from 'lodash/omit';
+import type React from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 
 const colours = [
   'primary',
@@ -21,11 +22,11 @@ const colours = [
   'danger',
 ] as const;
 
-export type Colour = typeof colours[number];
+export type Colour = (typeof colours)[number];
 
 const shadows = ['lw', 'md', 'tl'] as const;
 
-export type Shadow = typeof shadows[number];
+export type Shadow = (typeof shadows)[number];
 
 const spacingSides = [
   'top',
@@ -36,17 +37,15 @@ const spacingSides = [
   'horiz',
 ] as const;
 
-type Side = typeof spacingSides[number];
+type Side = (typeof spacingSides)[number];
 
 const spacingSizes = ['none', 'xs', 'sm', 'md', 'lg', 'xl'] as const;
 
-type Size = typeof spacingSizes[number];
+type Size = (typeof spacingSizes)[number];
 
 const spacingProps = (['margin', 'padding'] as const).flatMap((spacing) => [
   spacing,
-  ...spacingSides.map(
-    (side) => `${spacing}${capitalise(side) as Capitalize<Side>}` as const
-  ),
+  ...spacingSides.map((side) => `${spacing}${capitalise(side)}` as const),
 ]);
 
 const spacingRegex = new RegExp(
@@ -56,7 +55,7 @@ const spacingRegex = new RegExp(
 export type BaseProps = Id<
   {
     shadow?: Shadow;
-  } & { [Spacing in typeof spacingProps[number]]?: Size }
+  } & Partial<Record<(typeof spacingProps)[number], Size>>
 >;
 
 const baseProps = ['shadow', ...spacingProps] as const;
@@ -94,18 +93,18 @@ export const useBaseProps = <Props extends BaseProps & { className?: string }>(
   );
 
 type RefFromComponent<
-  Component extends keyof JSX.IntrinsicElements | ComponentType
+  Component extends keyof JSX.IntrinsicElements | ComponentType,
 > = Component extends ComponentType
   ? HTMLElement
   : Component extends keyof JSX.IntrinsicElements
-  ? JSX.IntrinsicElements[Component] extends HTMLAttributes<infer Element>
-    ? Element
-    : never
-  : never;
+    ? JSX.IntrinsicElements[Component] extends HTMLAttributes<infer Element>
+      ? Element
+      : never
+    : never;
 
 export const makeOverridableComponent = <
   DefaultTag extends keyof JSX.IntrinsicElements | ComponentType<any>,
-  Props = {}
+  Props = {},
 >(
   displayName: string,
   render: React.ForwardRefRenderFunction<
@@ -141,10 +140,10 @@ export const makeOverridableComponent = <
       )
     )
   ) as unknown as <
-    Tag extends keyof JSX.IntrinsicElements | ComponentType<any> = DefaultTag
+    Tag extends keyof JSX.IntrinsicElements | ComponentType<any> = DefaultTag,
   >(
     props: ComponentPropsWithoutRef<Tag> & {
       tag?: Tag;
     } & Props &
       BaseProps
-  ) => JSX.Element;
+  ) => React.JSX.Element;

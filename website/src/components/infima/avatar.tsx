@@ -1,10 +1,10 @@
-import React from 'react';
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import React from 'react';
 
-export type AvatarProps = {
+export interface AvatarProps {
   vertical?: boolean;
-};
+}
 
 export const Avatar = makeOverridableComponent<'div', AvatarProps>(
   'Avatar',
@@ -17,10 +17,10 @@ export const Avatar = makeOverridableComponent<'div', AvatarProps>(
   )
 );
 
-export type AvatarPhotoProps = {
+export interface AvatarPhotoProps {
   size?: 'sm' | 'lg' | 'xl';
   link?: boolean;
-};
+}
 
 export const AvatarPhoto = makeOverridableComponent<'div', AvatarPhotoProps>(
   'AvatarPhoto',

@@ -1,11 +1,11 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
-const { transpileCodeblocks } = require('remark-typescript-tools');
 const path = require('path');
+const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require('prism-react-renderer/themes/github');
+const { transpileCodeblocks } = require('remark-typescript-tools');
 const { name, version } = require('../package.json');
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const loadLanguage = require('./plugins/load-language');
 const loadLigature = require('./plugins/load-ligature');
 

@@ -1,11 +1,12 @@
-import React, { cloneElement, ReactElement } from 'react';
 import clsx from 'clsx';
-import { Shadow } from './base';
+import type { ReactElement } from 'react';
+import React, { cloneElement } from 'react';
+import type { Shadow } from './base';
 
-export type ElevationProps = {
+export interface ElevationProps {
   children: ReactElement<{ className: string }>;
   shadow: Shadow;
-};
+}
 
 export const Elevation = ({ children, shadow }: ElevationProps) =>
   cloneElement(children, {

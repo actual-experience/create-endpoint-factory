@@ -12,7 +12,7 @@ export type ConditionalBool<
   T extends boolean,
   IfTrue,
   IfFalse,
-  IfBoolean = IfTrue | IfFalse
+  IfBoolean = IfTrue | IfFalse,
 > = boolean extends T ? IfBoolean : T extends true ? IfTrue : IfFalse;
 
 /**
@@ -61,9 +61,10 @@ export type PickRequired<T, K extends keyof T> = Id<
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type Parser<Output, Input = unknown, ExtraParams extends any[] = []> = (
-  input: Input,
-  ...params: ExtraParams
-) => Output;
+export type Parser<
+  Output,
+  Input = unknown,
+  ExtraParams extends Array<any> = [],
+> = (input: Input, ...params: ExtraParams) => Output;
 
 export const id = <T>(t: T) => t;

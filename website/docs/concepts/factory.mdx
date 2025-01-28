@@ -102,7 +102,11 @@ import {
 
 export class ToastableError extends ResError {
   isToastable = true;
-  constructor(code: number, errorMsg: string, public toastMsg: string) {
+  constructor(
+    code: number,
+    errorMsg: string,
+    public toastMsg: string
+  ) {
     super(code, errorMsg);
   }
 }

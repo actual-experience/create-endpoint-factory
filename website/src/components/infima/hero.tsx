@@ -1,12 +1,13 @@
-import React, { ReactNode } from 'react';
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import type { ReactNode } from 'react';
+import React from 'react';
 
-export type HeroProps = {
+export interface HeroProps {
   title?: ReactNode;
   subtitle?: ReactNode;
   color?: 'dark' | 'primary';
-};
+}
 
 export const Hero = makeOverridableComponent<'div', HeroProps>(
   'Hero',

@@ -22,7 +22,7 @@ type ExcludeAny<T> = IsAny<T, never, T>;
 export type CustomizedNextApiHandler<
   ReturnType = any,
   SerializedErrorType = SerializedError,
-  DecoratorReturn = any
+  DecoratorReturn = any,
 > = NextApiHandler<
   NothingToAny<ReturnType> | SerializedErrorType | ExcludeAny<DecoratorReturn> // do we definitely want this? it stops an untyped decorator polluting the final union, but might be confusing (do we want to allow the pollution? how do we handle when there are no decorators?)
 >;
@@ -38,7 +38,7 @@ export interface HandlerData<
   Body = unknown,
   Query = NextApiRequest['query'],
   Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
 > {
   /** The original request object */
   req: NextApiRequest;
@@ -92,7 +92,7 @@ export type MethodDefinition<
   Body = unknown,
   Query = NextApiRequest['query'],
   Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
 > = {
   /**
    * Receive the body/query/response and return a parsed version of it. Expected to throw errors if invalid type.
@@ -161,18 +161,19 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
     : never;
 
 export type GenericsFromHandler<
-  Handler extends CustomizedNextApiHandler<any, any>
-> = Handler extends CustomizedNextApiHandler<
-  infer Return,
-  infer Error,
-  infer DecoratorReturn
->
-  ? {
-      return: Return;
-      error: Error;
-      decoratorReturn: DecoratorReturn;
-    }
-  : never;
+  Handler extends CustomizedNextApiHandler<any, any>,
+> =
+  Handler extends CustomizedNextApiHandler<
+    infer Return,
+    infer Error,
+    infer DecoratorReturn
+  >
+    ? {
+        return: Return;
+        error: Error;
+        decoratorReturn: DecoratorReturn;
+      }
+    : never;
 
 export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
   Config extends EndpointFactoryConfig<
@@ -188,7 +189,7 @@ export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
  */
 export interface MethodBuilder<
   Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
 > {
   <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
@@ -225,8 +226,9 @@ export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
   Config extends EndpointFactoryConfig,
   DecorReturn = never,
-  DefGenerics extends GenericsFromDefinition<Definition> = GenericsFromDefinition<Definition>,
-  ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>
+  DefGenerics extends
+    GenericsFromDefinition<Definition> = GenericsFromDefinition<Definition>,
+  ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>,
 > = CustomizedNextApiHandler<
   DefGenerics['return'],
   ConfGenerics['error'],
@@ -243,7 +245,7 @@ export type MethodDefinitions = Partial<
 export type MethodDefinitionsToHandlers<
   Definitions extends MethodDefinitions,
   Config extends EndpointFactoryConfig,
-  DecoReturn = never
+  DecoReturn = never,
 > = {
   [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition<
     any,
@@ -252,15 +254,15 @@ export type MethodDefinitionsToHandlers<
   >
     ? MethodDefinitionToHandler<Definitions[Method], Config, DecoReturn>
     : [Definitions[Method]] extends [infer Def | undefined]
-    ? Def extends MethodDefinition<any, any, any>
-      ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
-      : never
-    : never;
+      ? Def extends MethodDefinition<any, any, any>
+        ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
+        : never
+      : never;
 };
 
 export type UnionGenerics<
   Definitions extends MethodDefinitions,
-  Default extends MethodDefinition | undefined
+  Default extends MethodDefinition | undefined,
 > =
   | {
       [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition
@@ -274,7 +276,7 @@ export type UnionGenerics<
 export type EndpointDefinition<
   Definitions extends MethodDefinitions,
   Default extends MethodDefinition | undefined,
-  Decorators extends Decorator[],
+  Decorators extends Array<Decorator>,
   Config extends EndpointFactoryConfig,
   UnionedGenerics extends UnionGenerics<Definitions, Default> = UnionGenerics<
     Definitions,
@@ -283,7 +285,7 @@ export type EndpointDefinition<
   ConfGenerics extends GenericsFromConfig<Config> = GenericsFromConfig<Config>,
   DecoReturn = Decorators['length'] extends 0
     ? any
-    : GenericsFromDecorator<Decorators[number]>['return']
+    : GenericsFromDecorator<Decorators[number]>['return'],
 > = {
   /** Individual handlers for each method. */
   methods: MethodDefinitionsToHandlers<Definitions, Config, DecoReturn>;
@@ -309,23 +311,23 @@ export type CreateExtraApi<Options = any, Return = any> = (
 
 export type ExtraApiOptions<
   EA extends CreateExtraApi,
-  Params extends Parameters<EA> = Parameters<EA>
+  Params extends Parameters<EA> = Parameters<EA>,
 > = [Params['length']] extends [2]
   ? Params extends [req: NextApiRequest, option: infer Options]
     ? Options
     : undefined
   : [1 | 2] extends [Params['length']]
-  ? Params extends [req: NextApiRequest, option?: infer Options]
-    ? Options | undefined
-    : undefined
-  : undefined;
+    ? Params extends [req: NextApiRequest, option?: infer Options]
+      ? Options | undefined
+      : undefined
+    : undefined;
 
 export type ExtraApiReturn<EA extends CreateExtraApi> = ReturnType<EA>;
 
 export interface EndpointFactoryConfig<
   SerializedErrorType = any,
   Authentication = any,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
 > {
   /**
    * Receive any thrown errors (or returned `failWithCode`s) and return a serialized format suitable for sending via `json`.
@@ -362,7 +364,7 @@ export interface EndpointConfig<
   DisableAuthentication extends boolean = false,
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi,
-  Decorators extends Decorator[] = []
+  Decorators extends Array<Decorator> = [],
 > {
   /**
    * Callback to define individual method handlers.

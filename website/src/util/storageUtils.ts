@@ -11,7 +11,7 @@ import { useSyncExternalStore } from 'use-sync-external-store/shim';
 
 const StorageTypes = ['localStorage', 'sessionStorage', 'none'] as const;
 
-export type StorageType = typeof StorageTypes[number];
+export type StorageType = (typeof StorageTypes)[number];
 
 const DefaultStorageType: StorageType = 'localStorage';
 
@@ -88,12 +88,12 @@ Possible reasons: running Docusaurus in an iframe, in an incognito browser sessi
 }
 
 // Convenient storage interface for a single storage key
-export type StorageSlot = {
+export interface StorageSlot {
   get: () => string | null;
   set: (value: string) => void;
   del: () => void;
   listen: (onChange: (event: StorageEvent) => void) => () => void;
-};
+}
 
 const NoopStorageSlot: StorageSlot = {
   get: () => null,
@@ -182,7 +182,9 @@ export function createStorageSlot(
           }
         };
         window.addEventListener('storage', listener);
-        return () => window.removeEventListener('storage', listener);
+        return () => {
+          window.removeEventListener('storage', listener);
+        };
       } catch (err) {
         console.error(
           `Docusaurus storage error, can't listen for changes of key=${key}`,
@@ -238,13 +240,13 @@ export function useStorageSlot(
  */
 export function listStorageKeys(
   storageType: StorageType = DefaultStorageType
-): string[] {
+): Array<string> {
   const browserStorage = getBrowserStorage(storageType);
   if (!browserStorage) {
     return [];
   }
 
-  const keys: string[] = [];
+  const keys: Array<string> = [];
   for (let i = 0; i < browserStorage.length; i += 1) {
     const key = browserStorage.key(i);
     if (key !== null) {

@@ -98,7 +98,7 @@ import { id } from './utils/types';
 export const createEndpointFactory = <
   SerializedErrorType = SerializedError,
   Authentication = undefined,
-  ExtraApi extends CreateExtraApi = CreateExtraApi<undefined, undefined>
+  ExtraApi extends CreateExtraApi = CreateExtraApi<undefined, undefined>,
 >(
   config: EndpointFactoryConfig<
     SerializedErrorType,
@@ -114,17 +114,17 @@ export const createEndpointFactory = <
     Array<
       KeysMatching<
         typeof config,
-        ExtraApi | ((...args: any[]) => any) | undefined
+        ExtraApi | ((...args: Array<any>) => any) | undefined
       >
     >
-  >(['authenticate', 'serializeError', 'extraApi']).map((opt) =>
+  >(['authenticate', 'serializeError', 'extraApi']).map((opt) => {
     assert(
       typeof config[opt] === 'function' || typeof config[opt] === 'undefined',
       `\`${opt}\` callback must be function if provided, received ${typeof config[
         opt
       ]}`
-    )
-  );
+    );
+  });
 
   return <
     Definitions extends MethodDefinitions,
@@ -138,7 +138,7 @@ export const createEndpointFactory = <
         >
       | undefined = undefined,
     DisableAuthentication extends boolean = false,
-    Decorators extends Decorator[] = []
+    Decorators extends Array<Decorator> = [],
   >(
     endpointConfig: EndpointConfig<
       Definitions,
@@ -259,40 +259,43 @@ export const createEndpointFactory = <
           ...decorators
         ),
       }),
-      handler: decorateHandler(async (req, res): Promise<void> => {
-        const { method = '' } = req;
+      handler: decorateHandler(
+        async (req, res): Promise<void> => {
+          const { method = '' } = req;
 
-        if (method === 'OPTIONS') {
+          if (method === 'OPTIONS') {
+            res.setHeader('Allow', supportedMethods.join(','));
+            res.status(204).end();
+            return;
+          }
+
+          const definition =
+            methodDefinitions[
+              method.toLowerCase() as Lowercase<Exclude<HttpMethod, 'OPTIONS'>>
+            ];
+          if (definition) {
+            return executeDefinition(
+              config,
+              definition,
+              disableAuthentication,
+              req,
+              res
+            );
+          } else if (defaultDefinition) {
+            return executeDefinition(
+              config,
+              defaultDefinition,
+              disableAuthentication,
+              req,
+              res
+            );
+          }
+
           res.setHeader('Allow', supportedMethods.join(','));
-          res.status(204).end();
-          return;
-        }
-
-        const definition =
-          methodDefinitions[
-            method.toLowerCase() as Lowercase<Exclude<HttpMethod, 'OPTIONS'>>
-          ];
-        if (definition) {
-          return executeDefinition(
-            config,
-            definition,
-            disableAuthentication,
-            req,
-            res
-          );
-        } else if (defaultDefinition) {
-          return executeDefinition(
-            config,
-            defaultDefinition,
-            disableAuthentication,
-            req,
-            res
-          );
-        }
-
-        res.setHeader('Allow', supportedMethods.join(','));
-        res.status(405).end();
-      }, ...decorators),
+          res.status(405).end();
+        },
+        ...decorators
+      ),
     } as EndpointDefinition<Definitions, Default, Decorators, typeof config>;
   };
 };

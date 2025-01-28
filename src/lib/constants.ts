@@ -41,7 +41,7 @@ export const httpMethods = [
   'PATCH',
 ] as const;
 
-export type HttpMethod = typeof httpMethods[number];
+export type HttpMethod = (typeof httpMethods)[number];
 
 /**
  * Use to throw an API error from a logic function with a specified error code, optional readable message and meta (any other information)
@@ -95,7 +95,10 @@ export type FailWithCode = typeof failWithCode;
  * Use `succeedWithCode` instead of this directly.
  */
 export class ResSuccess<ReturnType = any> {
-  constructor(public statusCode: number, public response: ReturnType) {}
+  constructor(
+    public statusCode: number,
+    public response: ReturnType
+  ) {}
 }
 
 export const succeedWithCode = wrapConstructor(ResSuccess);

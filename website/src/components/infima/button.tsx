@@ -1,18 +1,16 @@
-import React from 'react';
-import {
-  Colour,
-  makeOverridableComponent,
-} from '@site/src/components/infima/base';
+import type { Colour } from '@site/src/components/infima/base';
+import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import React from 'react';
 
-export type ButtonProps = {
+export interface ButtonProps {
   color?: Colour;
   outline?: boolean;
   active?: boolean;
   disabled?: boolean;
   size?: 'sm' | 'lg';
   block?: boolean;
-};
+}
 
 export const Button = makeOverridableComponent<'button', ButtonProps>(
   'Button',

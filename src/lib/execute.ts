@@ -36,7 +36,7 @@ const authenticate = <Authentication = undefined>(
   }
 };
 
-const parse = async <Input, Output, Args extends any[]>(
+const parse = async <Input, Output, Args extends Array<any>>(
   data: Input,
   parser:
     | Parser<MaybePromise<Output>, Input, Args>
@@ -64,7 +64,7 @@ export const executeDefinition = async <
   SerializedErrorType = SerializedError,
   Authentication = undefined,
   DisableAuthentication extends boolean = false,
-  ExtraApi extends CreateExtraApi = CreateExtraApi
+  ExtraApi extends CreateExtraApi = CreateExtraApi,
 >(
   {
     serializeError = miniSerializeError as (
@@ -106,7 +106,7 @@ export const executeDefinition = async <
       ExtraApi
     > = {
       req,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       body,
       query,
       authentication: authentication as never,
@@ -126,19 +126,23 @@ export const executeDefinition = async <
     if (response instanceof ResError) {
       throw response;
     } else if (response instanceof ResSuccess) {
-      return res.status(response.statusCode).json(response.response);
+      res.status(response.statusCode).json(response.response);
+      return;
     } else {
       if (typeof response === 'undefined') {
         res.status(204).end();
         return;
       }
-      return res.status(200).json(response);
+      res.status(200).json(response);
+      return;
     }
   } catch (error) {
     if (error instanceof ResError) {
-      return res.status(error.statusCode).json(serializeError(error));
+      res.status(error.statusCode).json(serializeError(error));
+      return;
     } else {
-      return res.status(500).json(serializeError(error));
+      res.status(500).json(serializeError(error));
+      return;
     }
   }
 };

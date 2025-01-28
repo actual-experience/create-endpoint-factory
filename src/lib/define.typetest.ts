@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { pipeline } from 'stream/promises';
 import type { NextApiHandler, NextApiRequest } from 'next';
+import { expectTypeOf } from 'vitest';
 import z from 'zod';
 import { createEndpointFactory, nothing } from '..';
 import type { SerializedError } from './utils';
-import { expectTypeOf } from 'vitest';
 
 const createEndpoint = createEndpointFactory();
 
@@ -61,8 +61,10 @@ const wrappedHandler: NextApiHandler<
       return endpoint.methods.get(req, res);
     case 'PUT':
       return endpoint.methods.put(req, res);
-    case 'DELETE':
-      return res.status(200).json('qux');
+    case 'DELETE': {
+      res.status(200).json('qux');
+      return;
+    }
     case 'PATCH': {
       if (endpoint.methods.patch) {
         return endpoint.methods.patch(req, res);

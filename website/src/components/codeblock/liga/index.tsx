@@ -1,7 +1,7 @@
-import React from 'react';
-import clsx from 'clsx';
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { useLigature } from '@site/src/hooks/useCodeLigatures';
+import clsx from 'clsx';
+import React from 'react';
 
 import styles from './styles.module.scss';
 
@@ -9,7 +9,7 @@ export default function LigatureButton({
   className,
 }: {
   className?: string;
-}): JSX.Element {
+}): React.JSX.Element {
   const isBrowser = useIsBrowser();
   const { ligature, setLigature } = useLigature();
   return (
@@ -23,9 +23,9 @@ export default function LigatureButton({
         ligature !== 'none' && styles.ligatureBtnSelected
       )}
       disabled={!isBrowser}
-      onClick={() =>
-        setLigature((liga) => (liga === 'none' ? 'normal' : 'none'))
-      }
+      onClick={() => {
+        setLigature((liga) => (liga === 'none' ? 'normal' : 'none'));
+      }}
     >
       <code aria-hidden className={styles.ligatureIcon}>
         =&gt;

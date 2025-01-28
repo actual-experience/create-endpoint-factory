@@ -1,17 +1,22 @@
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import { useCallback, useEffect } from 'react';
-import React, { useMemo } from 'react';
-import { createContext, ReactNode, useContext, useState } from 'react';
-import { createStorageSlot } from '@site/src/util/storageUtils';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import { SetStateAction } from 'react';
+import { createStorageSlot } from '@site/src/util/storageUtils';
+import type { SetStateAction, ReactNode } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  createContext,
+  useContext,
+  useState,
+} from 'react';
 
-type ContextValue = {
+interface ContextValue {
   /** Current ligature setting */
   readonly ligature: Ligature;
   /** Set new ligature setting. */
   readonly setLigature: (ligature: SetStateAction<Ligature>) => void;
-};
+}
 
 const Context = createContext<ContextValue | undefined>(undefined);
 
@@ -23,7 +28,7 @@ const Ligatutures = {
   none: 'none',
 } as const;
 
-type Ligature = typeof Ligatutures[keyof typeof Ligatutures];
+type Ligature = (typeof Ligatutures)[keyof typeof Ligatutures];
 
 const coerceToLigature = (ligature?: string | null): Ligature =>
   ligature === Ligatutures.normal ? Ligatutures.normal : Ligatutures.none;
@@ -85,7 +90,9 @@ const useContextValue = (): ContextValue => {
       }
     };
     window.addEventListener('storage', onChange);
-    return () => window.removeEventListener('storage', onChange);
+    return () => {
+      window.removeEventListener('storage', onChange);
+    };
   }, [setLigature]);
 
   return useMemo(() => ({ ligature, setLigature }), [ligature, setLigature]);
@@ -95,7 +102,7 @@ export const LigatureProvider = ({
   children,
 }: {
   children: ReactNode;
-}): JSX.Element => {
+}): React.JSX.Element => {
   const value = useContextValue();
   return <Context.Provider value={value}>{children}</Context.Provider>;
 };

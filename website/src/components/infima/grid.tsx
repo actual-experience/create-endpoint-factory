@@ -1,6 +1,6 @@
-import React from 'react';
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
+import React from 'react';
 
 const _Grid = makeOverridableComponent<'div'>(
   'Grid',
@@ -9,9 +9,9 @@ const _Grid = makeOverridableComponent<'div'>(
   )
 );
 
-export type GridRowProps = {
+export interface GridRowProps {
   noGutters?: boolean;
-};
+}
 
 export const GridRow = makeOverridableComponent<'div', GridRowProps>(
   'GridRow',
@@ -24,10 +24,10 @@ export const GridRow = makeOverridableComponent<'div', GridRowProps>(
   )
 );
 
-export type GridColumnProps = {
+export interface GridColumnProps {
   span?: number;
   offset?: number;
-};
+}
 
 export const GridColumn = makeOverridableComponent<'div', GridColumnProps>(
   'GridColumn',

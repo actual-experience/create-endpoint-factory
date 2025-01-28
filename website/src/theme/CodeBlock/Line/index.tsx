@@ -1,6 +1,6 @@
-import React from 'react';
-import clsx from 'clsx';
 import type { Props } from '@theme/CodeBlock/Line';
+import clsx from 'clsx';
+import React from 'react';
 
 import styles from './styles.module.scss';
 
@@ -16,9 +16,9 @@ export default function CodeBlockLine({
   showLineNumbers,
   getLineProps,
   getTokenProps,
-}: Props): JSX.Element {
-  if (line.length === 1 && line[0]!.content === '\n') {
-    line[0]!.content = '';
+}: Props): React.JSX.Element {
+  if (line.length === 1 && line[0].content === '\n') {
+    line[0].content = '';
   }
 
   const lineProps = getLineProps({
