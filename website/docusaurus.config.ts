@@ -83,7 +83,6 @@ const config: Config = {
                     },
                   },
                 },
-                fileExtensions: ['.md', '.mdx'],
               } satisfies TranspileCodeblocksSettings,
             ],
           ],
