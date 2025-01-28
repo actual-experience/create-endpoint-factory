@@ -26,7 +26,7 @@ export default function CodeBlockLine({
   });
 
   const lineTokens = line.map((token, key) => (
-    <span key={key} {...getTokenProps({ token, key })} />
+    <span key={key} {...getTokenProps({ token })} />
   ));
 
   return (
