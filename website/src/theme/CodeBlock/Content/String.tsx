@@ -15,7 +15,7 @@ import WordWrapButton from '@theme/CodeBlock/WordWrapButton';
 import Details from '@theme/Details';
 
 import clsx from 'clsx';
-import Highlight, { defaultProps, type Language } from 'prism-react-renderer';
+import { Highlight } from 'prism-react-renderer';
 import styles from './styles.module.scss';
 
 declare module '@theme/CodeBlock/Content/String' {
@@ -67,15 +67,9 @@ export default function CodeBlockString({
 
   const content = (
     <div className={styles.codeBlockContent}>
-      <Highlight
-        {...defaultProps}
-        theme={prismTheme}
-        code={code}
-        language={(language ?? 'text') as Language}
-      >
+      <Highlight theme={prismTheme} code={code} language={language ?? 'text'}>
         {({ className, tokens, getLineProps, getTokenProps }) => (
           <pre
-            /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
             ref={wordWrap.codeBlockRef}
             className={clsx(className, styles.codeBlock, 'thin-scrollbar')}
