@@ -32,7 +32,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       params: {
         foo: 'bar',
       },
@@ -93,7 +93,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       test: async ({ fetch }) => {
         const optionsRes = (await fetch({
           method: 'OPTIONS',
@@ -143,7 +143,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       rejectOnHandlerError: true,
       test: async ({ fetch }) => {
         const unauthenticatedRes = await fetch({
@@ -186,7 +186,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpointWithoutAuth.handler,
+      pagesHandler: endpointWithoutAuth.handler,
       rejectOnHandlerError: true,
       test: async ({ fetch }) => {
         const unauthenticatedRes = await fetch({
@@ -229,7 +229,7 @@ describe('createEndpointFactory', () => {
 
     let useCorrectParams = true;
     await testApiHandler({
-      handler: endpointWithValidation.handler,
+      pagesHandler: endpointWithValidation.handler,
       paramsPatcher: (params) => {
         params.foo = useCorrectParams ? 'bar' : 'foo';
       },
@@ -271,12 +271,16 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpointWithTransforms.handler,
+      pagesHandler: endpointWithTransforms.handler,
       params: {
         num: '2',
       },
       test: async ({ fetch }) => {
-        const res = await fetch({ method: 'POST', body: 3 });
+        const res = await fetch({
+          method: 'POST',
+          body: JSON.stringify(3),
+          headers: { 'Content-Type': 'application/json' },
+        });
         expect(await res.json()).toStrictEqual({
           body: 6,
           query: {
@@ -323,7 +327,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       test: async ({ fetch }) => {
         const canRetryRes = await fetch({ method: 'POST', body: 'can retry' });
         expect(canRetryRes.status).toBe(500);
@@ -366,7 +370,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       test: async ({ fetch }) => {
         const getRes = await (await fetch()).json();
         expect(getRes).toEqual({ hasFoo: true });
@@ -378,18 +382,17 @@ describe('createEndpointFactory', () => {
 
   it('should allow returning a specific symbol to indicate that the response has already been sent', async () => {
     await testApiHandler({
-      handler: createEndpointFactory()({
+      pagesHandler: createEndpointFactory()({
         methods: (method) => ({
           get: method<typeof nothing>({
             handler: (data, { res }) => {
-              res.status(205);
-              res.json('foo');
+              res.status(200).json('foo');
               return nothing;
             },
           }),
           post: method<typeof nothing>({
             handler: async (data, { res }) => {
-              res.status(205);
+              res.status(200);
               await pipeline('foo', res);
               return nothing;
             },
@@ -399,13 +402,14 @@ describe('createEndpointFactory', () => {
       rejectOnHandlerError: true,
       test: async ({ fetch }) => {
         const getRes = await fetch();
-        expect(getRes.status).toBe(205);
+        expect(getRes.status).toBe(200);
+
         expect(await getRes.json()).toBe('foo');
 
         const postRes = (await fetch({
           method: 'POST',
         })) as unknown as Response;
-        expect(postRes.status).toBe(205);
+        expect(postRes.status).toBe(200);
         expect(await postRes.text()).toBe('foo');
       },
     });
@@ -431,7 +435,7 @@ describe('createEndpointFactory', () => {
     const withPatch = makeEndpoint(true);
 
     await testApiHandler({
-      handler: withoutPatch.handler,
+      pagesHandler: withoutPatch.handler,
       test: async ({ fetch }) => {
         const getRes = await fetch();
         expect(await getRes.json()).toBe('foo');
@@ -441,7 +445,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: withPatch.handler,
+      pagesHandler: withPatch.handler,
       test: async ({ fetch }) => {
         const getRes = await fetch();
         expect(await getRes.json()).toBe('foo');
@@ -456,7 +460,7 @@ describe('createEndpointFactory', () => {
 
   type TestCase = [
     func: () => void,
-    ...toThrowArgs: Parameters<JestAssertion['toThrow']>
+    ...toThrowArgs: Parameters<JestAssertion['toThrow']>,
   ];
   it.each<TestCase>([
     [
@@ -547,7 +551,7 @@ describe('createEndpointFactory', () => {
     });
 
     await testApiHandler({
-      handler: endpoint.handler,
+      pagesHandler: endpoint.handler,
       test: async ({ fetch }) => {
         const fooRes = await fetch({ method: 'POST', body: 'foo' });
         expect(await fooRes.json()).toEqual({ caught: 'foo' });
