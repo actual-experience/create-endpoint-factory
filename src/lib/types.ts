@@ -351,7 +351,13 @@ export interface EndpointFactoryConfig<
 export interface EndpointConfig<
   Definitions extends MethodDefinitions,
   Default extends
-    | MethodDefinition<any, any, any, any, any>
+    | MethodDefinition<
+        any,
+        any,
+        any,
+        ConditionalBool<DisableAuthentication, undefined, Authentication>,
+        ExtraApi
+      >
     | undefined = undefined,
   DisableAuthentication extends boolean = false,
   Authentication = any,
