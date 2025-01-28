@@ -87,7 +87,7 @@ export const executeDefinition = async <
   disableAuthentication: DisableAuthentication,
   req: NextApiRequest,
   res: NextApiResponse
-) => {
+): Promise<void> => {
   try {
     const authentication = disableAuthentication
       ? undefined
@@ -129,10 +129,10 @@ export const executeDefinition = async <
       return res.status(response.statusCode).json(response.response);
     } else {
       if (typeof response === 'undefined') {
-        return res.status(204).end();
-      } else {
-        return res.status(200).json(response);
+        res.status(204).end();
+        return;
       }
+      return res.status(200).json(response);
     }
   } catch (error) {
     if (error instanceof ResError) {

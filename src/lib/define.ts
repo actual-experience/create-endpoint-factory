@@ -259,12 +259,13 @@ export const createEndpointFactory = <
           ...decorators
         ),
       }),
-      handler: decorateHandler(async (req, res) => {
+      handler: decorateHandler(async (req, res): Promise<void> => {
         const { method = '' } = req;
 
         if (method === 'OPTIONS') {
           res.setHeader('Allow', supportedMethods.join(','));
-          return res.status(204).end();
+          res.status(204).end();
+          return;
         }
 
         const definition =
@@ -287,10 +288,10 @@ export const createEndpointFactory = <
             req,
             res
           );
-        } else {
-          res.setHeader('Allow', supportedMethods.join(','));
-          return res.status(405).end();
         }
+
+        res.setHeader('Allow', supportedMethods.join(','));
+        res.status(405).end();
       }, ...decorators),
     } as EndpointDefinition<Definitions, Default, Decorators, typeof config>;
   };
