@@ -1,7 +1,6 @@
 import useIsBrowser from '@docusaurus/useIsBrowser';
 import { useLigature } from '@site/src/hooks/useCodeLigatures';
 import clsx from 'clsx';
-import React from 'react';
 
 import styles from './styles.module.scss';
 

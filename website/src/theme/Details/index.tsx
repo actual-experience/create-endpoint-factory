@@ -2,7 +2,6 @@ import { Details as DetailsGeneric } from '@docusaurus/theme-common/Details';
 import type { Colour } from '@site/src/components/infima/base';
 import type { Props } from '@theme/Details';
 import clsx from 'clsx';
-import React from 'react';
 
 import styles from './styles.module.scss';
 

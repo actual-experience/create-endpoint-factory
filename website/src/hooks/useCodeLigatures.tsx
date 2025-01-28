@@ -2,7 +2,7 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { createStorageSlot } from '@site/src/util/storageUtils';
 import type { SetStateAction, ReactNode } from 'react';
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,

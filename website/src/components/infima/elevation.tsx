@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import type { ReactElement } from 'react';
-import React, { cloneElement } from 'react';
+import { cloneElement } from 'react';
 import type { Shadow } from './base';
 
 export interface ElevationProps {

@@ -1,30 +1,37 @@
-// @ts-check
-// Note: type annotations allow type checking and IDEs autocompletion
-const path = require('path');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const { transpileCodeblocks } = require('remark-typescript-tools');
-const { name, version } = require('../package.json');
+import path from 'path';
+import type * as Preset from '@docusaurus/preset-classic';
+import type { Config } from '@docusaurus/types';
+import { themes } from 'prism-react-renderer';
+import type { TranspileCodeblocksSettings } from 'remark-typescript-tools';
+import { transpileCodeblocks } from 'remark-typescript-tools';
+import { name, version } from '../package.json';
+import loadLanguage from './plugins/load-language';
+import loadLigature from './plugins/load-ligature';
 
-const loadLanguage = require('./plugins/load-language');
-const loadLigature = require('./plugins/load-ligature');
+const { dracula: darkCodeTheme, github: lightCodeTheme } = themes;
 
 const organizationName = 'actual-experience';
 const projectName = 'create-endpoint-factory';
 
+interface MagicCommentConfig {
+  className: string;
+  line?: string;
+  block?: { start: string; end: string };
+}
+
 /**
  * Creates magic comments from a map of names to classes (or pass `true` for a key to use `code-block-${name}-line` as the class)
- * @type {(classMap: Record<string,string | true>) => import('@docusaurus/theme-common/src/utils/codeBlockUtils').MagicCommentConfig[]}
  */
-const makeMagicComments = (classMap) =>
+const makeMagicComments: (
+  classMap: Record<string, string | true>
+) => Array<MagicCommentConfig> = (classMap): Array<MagicCommentConfig> =>
   Object.entries(classMap).map(([name, className]) => ({
     className: className === true ? `code-block-${name}-line` : className,
     line: `${name}-next-line`,
     block: { start: `${name}-start`, end: `${name}-end` },
   }));
 
-/** @type {import('@docusaurus/types').Config} */
-const config = {
+const config: Config = {
   title: 'Create Endpoint Factory',
   url: `https://${organizationName}.github.io`,
   baseUrl: `/${projectName}`,
@@ -51,8 +58,7 @@ const config = {
   presets: [
     [
       'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
@@ -60,8 +66,7 @@ const config = {
           remarkPlugins: [
             [
               transpileCodeblocks,
-              /** @type {import('remark-typescript-tools/dist/transpileCodeblocks/plugin').Settings} */
-              ({
+              {
                 compilerSettings: {
                   tsconfig: path.resolve(
                     __dirname,
@@ -79,7 +84,7 @@ const config = {
                   },
                 },
                 fileExtensions: ['.md', '.mdx'],
-              }),
+              } satisfies TranspileCodeblocksSettings,
             ],
           ],
         },
@@ -87,68 +92,70 @@ const config = {
         theme: {
           customCss: require.resolve('./src/scss/global.scss'),
         },
-      }),
+      } satisfies Preset.Options,
     ],
   ],
 
   plugins: ['docusaurus-plugin-sass', loadLigature, loadLanguage],
 
-  themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
-      colorMode: {
-        defaultMode: 'dark',
-        respectPrefersColorScheme: true,
+  themeConfig: {
+    colorMode: {
+      defaultMode: 'dark',
+      respectPrefersColorScheme: true,
+    },
+    navbar: {
+      style: 'dark',
+      title: 'Create Endpoint Factory',
+      logo: {
+        alt: 'Actual Logo',
+        src: 'img/logo-white.svg',
+        srcDark: 'img/logo-white.svg',
       },
-      navbar: {
-        style: 'dark',
-        title: 'Create Endpoint Factory',
-        logo: {
-          alt: 'Actual Logo',
-          src: 'img/logo-white.svg',
-          srcDark: 'img/logo-white.svg',
+      items: [
+        {
+          type: 'doc',
+          docId: 'getting-started',
+          position: 'left',
+          label: 'Docs',
         },
-        items: [
-          {
-            type: 'doc',
-            docId: 'getting-started',
-            position: 'left',
-            label: 'Docs',
-          },
-          {
-            href: `https://github.com/${organizationName}/${projectName}`,
-            position: 'right',
-            className: 'header-github-link',
-            'aria-label': 'GitHub repository',
-          },
-        ],
-      },
-      footer: {
-        style: 'dark',
-        links: [
-          {
-            title: 'Company',
-            items: [
-              { label: 'Website', href: 'https://actual-experience.com/' },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} Actual Experience plc. Built with Docusaurus.`,
-      },
-      prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-        magicComments: makeMagicComments({
-          highlight: 'theme-code-block-highlighted-line',
-          error: true,
-          success: true,
-          'ts-only': true,
-          'js-only': true,
-        }),
-      },
-    }),
+        {
+          href: `https://github.com/${organizationName}/${projectName}`,
+          position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'GitHub repository',
+        },
+      ],
+    },
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Company',
+          items: [{ label: 'Website', href: 'https://actual-experience.com/' }],
+        },
+      ],
+      copyright: `Copyright © ${new Date().getFullYear()} Actual Experience plc. Built with Docusaurus.`,
+    },
+    prism: {
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
+      magicComments: makeMagicComments({
+        highlight: 'theme-code-block-highlighted-line',
+        error: true,
+        success: true,
+        'ts-only': true,
+        'js-only': true,
+      }),
+    },
+  } satisfies Preset.ThemeConfig,
   customFields: {
     defaultLigatures: 'normal',
+  },
+  markdown: {
+    mdx1Compat: {
+      comments: false,
+      admonitions: false,
+    },
   },
 };
 

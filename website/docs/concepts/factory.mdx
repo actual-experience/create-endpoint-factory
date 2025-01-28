@@ -293,7 +293,7 @@ export const endpoint = createEndpointWithExtra({
 `extraOptions` is optional if the `extraApi` callback's second parameter is optional/potentially undefined.
 :::
 
-:::caution
+:::warning
 There's no way to change `extra`'s type dynamically - if a property is optionally included, it will still be marked as potentially undefined even if the options guarantee it exists.
 
 It's up to you whether to handle this with a standard null check or with type assertions.

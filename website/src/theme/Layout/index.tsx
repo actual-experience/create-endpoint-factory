@@ -2,7 +2,6 @@ import type { WrapperProps } from '@docusaurus/types';
 import { LigatureProvider } from '@site/src/hooks/useCodeLigatures';
 import type LayoutType from '@theme/Layout';
 import Layout from '@theme-original/Layout';
-import React from 'react';
 
 type Props = WrapperProps<typeof LayoutType>;
 

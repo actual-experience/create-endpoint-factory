@@ -16,7 +16,6 @@ import Details from '@theme/Details';
 
 import clsx from 'clsx';
 import Highlight, { defaultProps, type Language } from 'prism-react-renderer';
-import React from 'react';
 import styles from './styles.module.scss';
 
 declare module '@theme/CodeBlock/Content/String' {

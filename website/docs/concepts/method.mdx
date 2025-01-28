@@ -172,7 +172,7 @@ const endpoint = createEndpoint({
 export default endpoint.handler;
 ```
 
-:::caution
+:::warning
 When using Typescript, it's required to use the double call syntax `method<ReturnType>()(definition)` to use parsers.
 
 This allows the `ReturnType` type to be provided explicitly, while inferring the parsed types.

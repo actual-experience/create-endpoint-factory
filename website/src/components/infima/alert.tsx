@@ -2,7 +2,6 @@ import type { Colour } from '@site/src/components/infima/base';
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
 import type { MouseEventHandler } from 'react';
-import React from 'react';
 
 export interface AlertProps {
   color?: Colour;
@@ -25,7 +24,7 @@ export const Alert = makeOverridableComponent<'div', AlertProps>(
     <Tag
       {...props}
       ref={ref}
-      className={clsx('alert', color && `alert--${color}`, className)}
+      className={clsx('alert', `alert--${color}`, className)}
       role="alert"
     >
       {onClose && (

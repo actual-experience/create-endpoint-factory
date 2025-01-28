@@ -68,7 +68,7 @@ export const endpoint = createEndpoint({
 
 ### Handler decoration
 
-<!-- TODO: Decorator -> Enhancer? -->
+{/* TODO: Decorator -> Enhancer? */}
 
 It's a fairly common pattern to create a function that receives a NextJS handler and returns a new handler wrapping it. CEF supports this via decorators.
 
@@ -104,7 +104,7 @@ _However, this approach doesn't decorate the included [individual method handler
 
 :::
 
-:::caution
+:::warning
 Each decorator is expected to take one parameter, the handler. If the original wrapper needs extra parameters, for example configuration, then a secondary function would be necessary.
 
 ```ts

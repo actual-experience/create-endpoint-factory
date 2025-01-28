@@ -1,6 +1,5 @@
 import { makeOverridableComponent } from '@site/src/components/infima/base';
 import clsx from 'clsx';
-import React from 'react';
 
 export interface AvatarProps {
   vertical?: boolean;
