@@ -255,11 +255,7 @@ describe('createEndpointFactory', () => {
       methods: (method) => ({
         post: method()({
           parsers: {
-            body: (body) =>
-              z.coerce
-                .number()
-                .transform((n) => n * 2)
-                .parse(body),
+            body: z.coerce.number().transform((n) => n * 2),
             query: (query): { num: `${number}` } => {
               const { num = '' } = query;
               return { num: `${parseInt(num.toString()) * 2}` };

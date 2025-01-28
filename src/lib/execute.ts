@@ -1,3 +1,4 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   failWithCode,
@@ -15,7 +16,7 @@ import type {
 } from './types';
 import type { SerializedError } from './utils';
 import { miniSerializeError } from './utils';
-import type { ConditionalBool } from './utils/types';
+import type { ConditionalBool, MaybePromise, Parser } from './utils/types';
 
 const authenticate = <Authentication = undefined>(
   authenticationFn: EndpointFactoryConfig<any, Authentication>['authenticate'],
@@ -33,6 +34,29 @@ const authenticate = <Authentication = undefined>(
       err instanceof Error ? err.message : 'Authentication failed'
     );
   }
+};
+
+const parse = async <Input, Output, Args extends any[]>(
+  data: Input,
+  parser:
+    | Parser<MaybePromise<Output>, Input, Args>
+    | StandardSchemaV1<Input, Output>
+    | undefined,
+  failMessage: string,
+  ...args: Args
+) => {
+  if (!parser) return data as never;
+  if (typeof parser === 'function') {
+    return parser(data, ...args);
+  }
+  const result = await parser['~standard'].validate(data);
+  if (result.issues) {
+    throw failWithCode(
+      400,
+      failMessage + '\n\n' + JSON.stringify(result.issues, null, 2)
+    );
+  }
+  return result.value;
 };
 
 export const executeDefinition = async <
@@ -68,6 +92,13 @@ export const executeDefinition = async <
     const authentication = disableAuthentication
       ? undefined
       : await authenticate(globalAuthenticate, req);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const [body, query] = await Promise.all([
+      parse(req.body, parsers?.body, 'Invalid body', failWithCode, req),
+      parse(req.query, parsers?.query, 'Invalid query', failWithCode, req),
+    ]);
+
     const data: HandlerData<
       any,
       any,
@@ -76,14 +107,9 @@ export const executeDefinition = async <
     > = {
       req,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: (await parsers?.body?.(req.body, failWithCode, req)) ?? req.body,
-      query:
-        (await parsers?.query?.(req.query, failWithCode, req)) ?? req.query,
-      authentication: authentication as ConditionalBool<
-        DisableAuthentication,
-        undefined,
-        Authentication
-      >,
+      body,
+      query,
+      authentication: authentication as never,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       extra: extraApi?.(req, extraOptions),
     };
@@ -92,6 +118,7 @@ export const executeDefinition = async <
       succeedWithCode,
       failWithCode,
     };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const response = await handler(data, api);
     if (isNothing(response) || res.writableEnded) {
       return;
