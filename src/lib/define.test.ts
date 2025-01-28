@@ -4,6 +4,7 @@ import { testApiHandler } from 'next-test-api-route-handler';
 import { z } from 'zod';
 import { nothing, ResError, createEndpointFactory } from '..';
 import type { Decorator, GenericsFromHandler } from './types';
+import { describe, expect, it, JestAssertion } from 'vitest';
 
 const pipeline = promisify(stream.pipeline);
 
@@ -455,7 +456,7 @@ describe('createEndpointFactory', () => {
 
   type TestCase = [
     func: () => void,
-    ...toThrowArgs: Parameters<jest.Matchers<void, () => void>['toThrow']>
+    ...toThrowArgs: Parameters<JestAssertion['toThrow']>
   ];
   it.each<TestCase>([
     [

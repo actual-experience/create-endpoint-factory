@@ -4,7 +4,7 @@ import type { NextApiHandler, NextApiRequest } from 'next';
 import z from 'zod';
 import { createEndpointFactory, nothing } from '..';
 import type { SerializedError } from './utils';
-import { expectExactType, expectType, expectUnknown } from './utils/typetests';
+import { expectTypeOf } from 'vitest';
 
 const createEndpoint = createEndpointFactory();
 
@@ -17,8 +17,8 @@ const endpoint = createEndpoint({
           body: z.literal('body1').transform((body) => `${body}!` as const),
         },
         handler: ({ body, query }) => {
-          expectExactType('body1!' as const)(body);
-          expectExactType<Record<string, string>>({})(query);
+          expectTypeOf(body).toEqualTypeOf<'body1!'>();
+          expectTypeOf(query).toEqualTypeOf<Record<string, string>>();
           return 'foo' as const;
         },
       }),
@@ -26,9 +26,9 @@ const endpoint = createEndpoint({
         // @ts-expect-error parsers not allowed without double call
         parsers: {},
         handler: ({ body, query, authentication }) => {
-          expectUnknown(body);
-          expectExactType<NextApiRequest['query']>({})(query);
-          expectType<undefined>(authentication);
+          expectTypeOf(body).toBeUnknown();
+          expectTypeOf(query).toEqualTypeOf<NextApiRequest['query']>();
+          expectTypeOf(authentication).toBeUndefined();
           return 'bar' as const;
         },
       }),
@@ -37,8 +37,8 @@ const endpoint = createEndpoint({
           ? undefined
           : method<'baz'>()({
               handler: ({ body, query }) => {
-                expectUnknown(body);
-                expectExactType<NextApiRequest['query']>({})(query);
+                expectTypeOf(body).toBeUnknown();
+                expectTypeOf(query).toEqualTypeOf<NextApiRequest['query']>();
                 return 'baz';
               },
             }),
@@ -127,7 +127,7 @@ const endpointWithAuth = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
       handler: ({ authentication }) => {
-        expectType<{ auth: boolean }>(authentication);
+        expectTypeOf(authentication).toMatchTypeOf<{ auth: boolean }>();
       },
     }),
   }),
@@ -137,7 +137,7 @@ const endpointWithAuthDisabled = createEndpointWithAuth({
   methods: (method) => ({
     get: method({
       handler: ({ authentication }) => {
-        expectType<undefined>(authentication);
+        expectTypeOf(authentication).toBeUndefined();
       },
     }),
   }),
@@ -152,7 +152,7 @@ const endpointWithExtra = createEndpointWithExtra({
   methods: (method) => ({
     get: method({
       handler: ({ extra }) => {
-        expectExactType({ str: '' })(extra);
+        expectTypeOf(extra).toEqualTypeOf<{ str: string }>();
       },
       extraOptions: 'foo',
     }),
@@ -168,7 +168,7 @@ const endpointWithExtraOptional = createEndpointWithExtraOptional({
   methods: (method) => ({
     get: method({
       handler: ({ extra }) => {
-        expectExactType<{ str: string | undefined }>({ str: '' })(extra);
+        expectTypeOf(extra).toEqualTypeOf<{ str: string | undefined }>();
       },
     }),
   }),
