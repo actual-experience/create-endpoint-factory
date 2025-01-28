@@ -1,3 +1,4 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import type { NextApiRequest, NextApiResponse, NextApiHandler } from 'next';
 import type {
   FailWithCode,
@@ -33,12 +34,12 @@ export type Decorator<ReturnType = any> = (
 export type GenericsFromDecorator<Deco extends Decorator> =
   Deco extends Decorator<infer Return> ? { return: Return } : never;
 
-export type HandlerData<
+export interface HandlerData<
   Body = unknown,
   Query = NextApiRequest['query'],
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   /** The original request object */
   req: NextApiRequest;
   /** Request body, parsed with parsers.body */
@@ -55,7 +56,7 @@ export type HandlerData<
    * Information returned from the `extraApi` function.
    */
   extra: ExtraApiReturn<ExtraApi>;
-};
+}
 
 /**
  * Helpers for the handler response
@@ -101,16 +102,20 @@ export type MethodDefinition<
    * Original request object is passed as third argument.
    */
   parsers?: {
-    body?: Parser<
-      MaybePromise<Body>,
-      unknown,
-      [failWithCode: FailWithCode, req: NextApiRequest]
-    >;
-    query?: Parser<
-      MaybePromise<Query>,
-      NextApiRequest['query'],
-      [failWithCode: FailWithCode, req: NextApiRequest]
-    >;
+    body?:
+      | Parser<
+          MaybePromise<Body>,
+          unknown,
+          [failWithCode: FailWithCode, req: NextApiRequest]
+        >
+      | StandardSchemaV1<unknown, Body>;
+    query?:
+      | Parser<
+          MaybePromise<Query>,
+          NextApiRequest['query'],
+          [failWithCode: FailWithCode, req: NextApiRequest]
+        >
+      | StandardSchemaV1<NextApiRequest['query'], Query>;
   };
   /**
    * Handles the request and return the specified data.
@@ -156,7 +161,7 @@ export type GenericsFromDefinition<Definition extends MethodDefinition> =
     : never;
 
 export type GenericsFromHandler<
-  Handler extends CustomizedNextApiHandler<any, any, any>
+  Handler extends CustomizedNextApiHandler<any, any>
 > = Handler extends CustomizedNextApiHandler<
   infer Return,
   infer Error,
@@ -181,10 +186,10 @@ export type GenericsFromConfig<Config extends EndpointFactoryConfig> =
 /**
  * Define a method handler and associated configuration.
  */
-export type MethodBuilder<
+export interface MethodBuilder<
   Authentication = any,
   ExtraApi extends CreateExtraApi = CreateExtraApi
-> = {
+> {
   <ReturnType = unknown>(): <Body = unknown, Query = NextApiRequest['query']>(
     definition: MethodDefinition<
       ReturnType,
@@ -214,7 +219,7 @@ export type MethodBuilder<
     Authentication,
     ExtraApi
   >;
-};
+}
 
 export type MethodDefinitionToHandler<
   Definition extends MethodDefinition,
@@ -231,7 +236,7 @@ export type MethodDefinitionToHandler<
 export type MethodDefinitions = Partial<
   Record<
     Lowercase<Exclude<HttpMethod, 'OPTIONS'>>,
-    MethodDefinition<any, any, any, any, CreateExtraApi>
+    MethodDefinition<any, any, any>
   >
 >;
 
@@ -243,13 +248,11 @@ export type MethodDefinitionsToHandlers<
   [Method in keyof Definitions]: Definitions[Method] extends MethodDefinition<
     any,
     any,
-    any,
-    any,
-    CreateExtraApi
+    any
   >
     ? MethodDefinitionToHandler<Definitions[Method], Config, DecoReturn>
     : [Definitions[Method]] extends [infer Def | undefined]
-    ? Def extends MethodDefinition<any, any, any, any, CreateExtraApi>
+    ? Def extends MethodDefinition<any, any, any>
       ? MethodDefinitionToHandler<Def, Config, DecoReturn> | undefined
       : never
     : never;

@@ -151,7 +151,7 @@ const endpoint = createEndpoint({
   methods: (method) => ({
     post: method<{ created: true }>()({
       parsers: {
-        body: (body, failWithCode) => {
+        body: (body, failWithCode, req) => {
           if (!body) {
             throw failWithCode(400, 'no body provided');
           }
@@ -180,33 +180,12 @@ This allows the `ReturnType` type to be provided explicitly, while inferring the
 If you're using Javascript, this is not required.
 :::
 
-<!-- TODO: work out why the below recipe results in body being typed as `any`
-
 :::tip
-If you're using a schema library such as [`zod`](https://zod.dev), you may want to create a recipe function to turn a given schema into a parser. For example:
+Any [Standard Schema](https://standardschema.dev/#what-schema-libraries-implement-the-spec) library can also be used directly, though it may still be desireable to wrap the schema with a function that provides a custom error message and status code.
 
 ```ts
 import { createEndpointFactory } from 'next-create-endpoint-factory';
-import type { FailWithCode } from 'next-create-endpoint-factory';
 import { z } from 'zod';
-import type { ZodTypeAny } from 'zod';
-
-// highlight-start
-const schemaToParser =
-  <Schema extends z.ZodTypeAny>(
-    schema: Schema,
-    code: number,
-    message: string
-  ) =>
-  (value: unknown, failWithCode: FailWithCode): z.output<Schema> => {
-    const parseResult = schema.safeParse(value);
-    if (!parseResult.success) {
-      throw failWithCode(code, message, { error: parseResult.error });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return parseResult.data;
-  };
-// highlight-end
 
 export const createEndpoint = createEndpointFactory();
 
@@ -215,11 +194,20 @@ const endpoint = createEndpoint({
     post: method<{ created: true }>()({
       parsers: {
         // highlight-start
-        body: schemaToParser(
-          z.string().transform((str) => str.split(',')),
-          400,
-          'Invalid body'
-        ),
+        // works, but code will always be 400 and message will always be 'Invalid body' + stringified issues
+        // body: z.string().transform((str) => str.split(',')),
+
+        // allows for custom error message and code
+        body: (body, failWithCode) => {
+          const parsed = z
+            .string()
+            .transform((str) => str.split(','))
+            .parse(body);
+          if (parsed.length === 0) {
+            throw failWithCode(400, 'No items provided');
+          }
+          return parsed;
+        },
         // highlight-end
       },
       handler: ({ body }, { failWithCode, succeedWithCode }) => {
@@ -231,7 +219,4 @@ const endpoint = createEndpoint({
 });
 ```
 
-
-
 :::
--->

@@ -13,12 +13,8 @@ const endpoint = createEndpoint({
     return {
       get: method<'foo'>()({
         parsers: {
-          query: (data) => z.record(z.coerce.string()).parse(data),
-          body: (data) =>
-            z
-              .literal('body1')
-              .transform((body) => `${body}!` as const)
-              .parseAsync(data),
+          query: z.record(z.coerce.string()),
+          body: z.literal('body1').transform((body) => `${body}!` as const),
         },
         handler: ({ body, query }) => {
           expectExactType('body1!' as const)(body);
