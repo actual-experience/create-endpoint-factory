@@ -90,8 +90,5 @@
   "dependencies": {
     "@standard-schema/spec": "^1.0.0"
   },
-  "workspaces": [
-    "website"
-  ],
-  "packageManager": "yarn@4.6.0"
+  "packageManager": "pnpm@10.5.2+sha256.79a98daa90248b50815e31460790f118c56fe099113370826caa0153be6daba5"
 }

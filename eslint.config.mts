@@ -10,7 +10,7 @@ import react from '@eslint-react/eslint-plugin';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mts', 'dist', '.yarn'],
+    ignores: ['eslint.config.mts', 'dist'],
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
